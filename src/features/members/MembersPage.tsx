@@ -352,7 +352,7 @@ function PrintJobModal({
       ) : (
         <div className="section-grid">
           {error ? <div className="error-banner">{error}</div> : null}
-          {loading ? <LoadingState label="à¦ªà§à¦°à¦¿à¦¨à§à¦Ÿ à¦«à¦¾à¦‡à¦² à¦¤à§ˆà¦°à¦¿ à¦¹à¦šà§à¦›à§‡..." /> : null}
+          {loading ? <LoadingState label="Print file is being prepared..." /> : null}
           <p className="muted">{memberCount} জন সদস্যের জন্য ID card print job তৈরি হবে।</p>
           <FormField label="প্রিন্ট টেমপ্লেট">
             <SelectInput value={selectedTemplateId} onChange={(event) => setTemplateId(event.target.value)}>
