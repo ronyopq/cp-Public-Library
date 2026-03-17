@@ -1,0 +1,19 @@
+# Assumptions
+
+- The first deployment boots through a one-time setup flow that creates the initial `super_admin` user instead of shipping with a default password.
+- Bangladesh libraries using this app operate in `Asia/Dhaka` and do not require daylight-saving handling.
+- Overdue fines default to `৳5` per day per copy unless managers change fee settings.
+- Member numbers will follow an application-generated format and are unique tenant-wide.
+- Accession codes are generated through a Durable Object and stored in `book_copies.accession_sequence` + `book_copies.accession_code`.
+- The role model starts with `Public`, `Member`, `Librarian`, `Officer`, `Manager`, `Admin`, and `Super Admin`.
+- `book_contributors` stores contributor names inline instead of a separate authority table in the first release.
+- `accounts` and `ledgers` are designed for ledger-ready accounting, even if the first UI release only exposes simplified payment flows.
+- Cloudflare D1 is the only source of truth for relational state, ledger state, reminders, and accession history. KV is used only for cache, feature flag caching, and rate limiting windows.
+- R2 objects are served through signed application routes instead of a public bucket by default.
+- Reminders are queued for background processing and the daily cron runs at `03:00 UTC`, which is `09:00 Asia/Dhaka`.
+- Public catalog and competition publication are feature-flagged and can be disabled without removing administrative data.
+- ISBN lookup can blend optional external metadata lookups with AI/OCR-assisted extraction, but every intake draft still requires human confirmation before persistence.
+- Sensitive delete operations are implemented as soft delete and remain restricted to `manager` and `super_admin`.
+- Application sessions are stored in Cloudflare D1 with hashed session tokens, transported via HttpOnly cookies, and expire after 14 days of inactivity-free access unless revoked earlier.
+- Password reset is manager-driven in the first release; self-service email reset is deferred until transactional email infrastructure is added.
+- Librarian and Officer roles can operate daily circulation and catalog workflows within granted permissions, but sensitive user/settings changes remain limited to `manager`, `admin`, and `super_admin`.
