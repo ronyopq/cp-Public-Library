@@ -18,12 +18,13 @@ export async function apiRequest<T>(
   input: string,
   init: RequestInit = {},
 ): Promise<T> {
+  const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData
   const response = await fetch(input, {
     credentials: 'include',
     ...init,
     headers: {
       Accept: 'application/json',
-      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(!isFormData && init.body ? { 'Content-Type': 'application/json' } : {}),
       ...(init.headers ?? {}),
     },
   })
@@ -47,6 +48,14 @@ export function apiPost<T>(input: string, body: unknown) {
   return apiRequest<T>(input, {
     method: 'POST',
     body: JSON.stringify(body),
+  })
+}
+
+export function apiForm<T>(input: string, body: FormData, init: RequestInit = {}) {
+  return apiRequest<T>(input, {
+    method: 'POST',
+    ...init,
+    body,
   })
 }
 

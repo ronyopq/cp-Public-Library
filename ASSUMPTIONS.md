@@ -13,6 +13,10 @@
 - Reminders are queued for background processing and the daily cron runs at `03:00 UTC`, which is `09:00 Asia/Dhaka`.
 - Public catalog and competition publication are feature-flagged and can be disabled without removing administrative data.
 - ISBN lookup can blend optional external metadata lookups with AI/OCR-assisted extraction, but every intake draft still requires human confirmation before persistence.
+- Book intake requires at least one seed input (`ISBN`, title, source URL, or metadata page image); a completely blank bibliographic record is rejected server-side even after OCR or manual review.
+- Cover image processing is client-assisted in the first release: the browser crops, resizes, compresses, and generates a thumbnail before uploading both files to R2 via Worker endpoints.
+- ISBN enrichment tries Open Library first and Google Books second; source URL extraction prefers structured data/host adaptors, then falls back to generic HTML metadata scraping.
+- OCR/vision-assisted metadata extraction uses Workers AI when the binding is available and gracefully falls back to manual review when AI extraction is unavailable or incomplete.
 - Sensitive delete operations are implemented as soft delete and remain restricted to `manager` and `super_admin`.
 - Application sessions are stored in Cloudflare D1 with hashed session tokens, transported via HttpOnly cookies, and expire after 14 days of inactivity-free access unless revoked earlier.
 - Password reset is manager-driven in the first release; self-service email reset is deferred until transactional email infrastructure is added.

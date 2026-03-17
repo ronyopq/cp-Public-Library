@@ -174,24 +174,92 @@ export interface DashboardSummary {
   featureFlags: FeatureFlags
 }
 
+export type CatalogLookupSourceType =
+  | 'isbn'
+  | 'url'
+  | 'ocr'
+  | 'manual'
+  | 'cover'
+
+export type CatalogLookupEngine =
+  | 'open_library'
+  | 'google_books'
+  | 'open_library_url'
+  | 'google_books_url'
+  | 'rokomari'
+  | 'schema_org'
+  | 'generic_html'
+  | 'workers_ai'
+  | 'manual'
+
+export type DuplicateResolutionStrategy =
+  | 'create_new_record'
+  | 'use_existing_record'
+  | 'add_copy_to_existing_record'
+
+export interface CatalogLookupLog {
+  source: CatalogLookupEngine
+  status: 'success' | 'warning' | 'failed' | 'skipped'
+  message: string
+}
+
+export interface IntakeSourceRecord {
+  type: CatalogLookupSourceType
+  value: string
+}
+
+export interface IntakeCompleteness {
+  title: boolean
+  authors: boolean
+  publisher: boolean
+  publicationYear: boolean
+  isbn: boolean
+  language: boolean
+  cover: boolean
+}
+
+export interface CatalogOption {
+  id: string
+  labelBn: string
+  labelEn: string
+  code?: string | null
+}
+
 export interface BibliographicRecord {
   id: string
-  isbn?: string | null
+  recordCode?: string | null
+  isbn10?: string | null
+  isbn13?: string | null
   titleBn?: string | null
   titleEn: string
-  subtitle?: string | null
+  subtitleBn?: string | null
+  subtitleEn?: string | null
   authors: string[]
-  publisher?: string | null
+  coAuthors: string[]
+  editors: string[]
+  translators: string[]
+  publisherId?: string | null
+  publisherName?: string | null
   edition?: string | null
   publicationYear?: number | null
+  pageCount?: number | null
   languageCode: string
-  category?: string | null
-  keywords: string[]
+  categoryId?: string | null
+  categoryName?: string | null
+  subcategoryId?: string | null
+  subcategoryName?: string | null
+  tags: string[]
   summary?: string | null
+  notes?: string | null
+  publicVisibility: boolean
   coverImageKey?: string | null
+  coverThumbnailKey?: string | null
+  metadataPageKey?: string | null
   sourceUrl?: string | null
+  sourceNote?: string | null
   recordStatus: BookRecordStatus
   duplicateScore?: number | null
+  duplicateHints?: string[]
   createdAt: string
   updatedAt: string
 }
@@ -208,9 +276,12 @@ export interface CopyItem {
   locationRoom?: string | null
   locationRack?: string | null
   locationShelf?: string | null
+  quantity?: number
   acquisitionType: AcquisitionType
   acquisitionDate?: string | null
   acquisitionPrice?: number | null
+  acquisitionSource?: string | null
+  invoiceReference?: string | null
   vendorName?: string | null
   notes?: string | null
   createdAt: string
@@ -218,11 +289,55 @@ export interface CopyItem {
 }
 
 export interface BookIntakeDraft {
+  seed: {
+    isbn?: string
+    sourceUrl?: string
+    manualTitle?: string
+    manualAuthor?: string
+    manualPublisher?: string
+  }
   metadata: Partial<BibliographicRecord>
   copyDefaults?: Partial<CopyItem>
-  sources: Array<{ type: 'isbn' | 'url' | 'ocr' | 'manual'; value: string }>
+  sources: IntakeSourceRecord[]
+  lookupLog: CatalogLookupLog[]
+  completeness: IntakeCompleteness
+  requiresMetadataPage: boolean
   warnings: string[]
-  duplicates: BibliographicRecord[]
+  duplicates: DuplicateCandidate[]
+}
+
+export interface DuplicateCandidate {
+  record: BibliographicRecord
+  reason: string
+  resolutionHint: DuplicateResolutionStrategy
+  exactIsbnMatch: boolean
+  similarityScore: number
+}
+
+export interface IntakeAsset {
+  key: string
+  url: string
+  kind: 'cover' | 'cover_thumbnail' | 'metadata_page'
+  fileName: string
+  contentType: string
+}
+
+export interface CatalogOptionsPayload {
+  publishers: CatalogOption[]
+  languages: CatalogOption[]
+  categories: Array<
+    CatalogOption & {
+      parentId?: string | null
+    }
+  >
+}
+
+export interface CatalogSaveResult {
+  bibliographicRecord: BibliographicRecord
+  duplicateStrategy: DuplicateResolutionStrategy
+  createdCopyIds: string[]
+  createdBarcodeValues: string[]
+  createdQrCodes: string[]
 }
 
 export interface Member {

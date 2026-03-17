@@ -4,11 +4,13 @@ import { dbAll, dbValue } from '../lib/db'
 import { apiOk } from '../lib/http'
 import { getShellSettings } from '../lib/settings'
 import type { AppEnv } from '../types'
+import { createCatalogRoutes } from './catalog'
 
 export function createAppRoutes() {
   const app = new Hono<AppEnv>()
 
   app.use('*', requireAuth())
+  app.route('/catalog', createCatalogRoutes())
 
   app.get('/shell', async (c) => {
     const shellSettings = await getShellSettings(c.env.DB, c.env)

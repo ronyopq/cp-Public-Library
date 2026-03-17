@@ -2,16 +2,17 @@ import type { ReactElement } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import type { PermissionKey } from '@shared/index'
 import { LoadingState } from '@/components/ui/LoadingState'
-import { useAuth } from '@/providers/useAuth'
 import { AppShell } from '@/app/AppShell'
+import { useAuth } from '@/providers/useAuth'
+import { AccountPage } from '@/features/account/AccountPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { SetupPage } from '@/features/auth/SetupPage'
-import { DashboardPage } from '@/features/dashboard/DashboardPage'
-import { UsersPage } from '@/features/users/UsersPage'
-import { SettingsPage } from '@/features/settings/SettingsPage'
-import { AuditLogsPage } from '@/features/settings/AuditLogsPage'
-import { AccountPage } from '@/features/account/AccountPage'
+import { BookIntakePage } from '@/features/catalog/BookIntakePage'
 import { PlaceholderPage } from '@/features/common/PlaceholderPage'
+import { DashboardPage } from '@/features/dashboard/DashboardPage'
+import { AuditLogsPage } from '@/features/settings/AuditLogsPage'
+import { SettingsPage } from '@/features/settings/SettingsPage'
+import { UsersPage } from '@/features/users/UsersPage'
 
 function ProtectedRoute({ permission }: { permission?: PermissionKey }) {
   const { loading, bootstrapRequired, user } = useAuth()
@@ -42,6 +43,7 @@ function ProtectedRoute({ permission }: { permission?: PermissionKey }) {
 
 function PublicRoute({ children }: { children: ReactElement }) {
   const { loading, bootstrapRequired, user } = useAuth()
+
   if (loading) {
     return <LoadingState />
   }
@@ -59,6 +61,7 @@ function PublicRoute({ children }: { children: ReactElement }) {
 
 function RootRedirect() {
   const { loading, bootstrapRequired, user } = useAuth()
+
   if (loading) {
     return <LoadingState />
   }
@@ -97,10 +100,11 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/app" element={<AppShell />}>
           <Route index element={<DashboardPage />} />
-          <Route
-            path="books"
-            element={<PlaceholderPage title="বই মডিউল" permission="catalog.view_internal" />}
-          />
+
+          <Route element={<ProtectedRoute permission="catalog.manage_metadata" />}>
+            <Route path="books" element={<BookIntakePage />} />
+          </Route>
+
           <Route
             path="members"
             element={<PlaceholderPage title="সদস্য মডিউল" permission="members.manage" />}
@@ -115,7 +119,12 @@ export default function App() {
           />
           <Route
             path="competitions"
-            element={<PlaceholderPage title="প্রতিযোগিতা মডিউল" permission="competitions.manage" />}
+            element={
+              <PlaceholderPage
+                title="প্রতিযোগিতা মডিউল"
+                permission="competitions.manage"
+              />
+            }
           />
           <Route
             path="printing"

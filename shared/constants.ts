@@ -30,7 +30,7 @@ export const ACQUISITION_TYPES = [
 
 export const MEMBER_STATUSES = ['active', 'inactive', 'suspended'] as const
 
-export const BOOK_RECORD_STATUSES = ['draft', 'active', 'archived'] as const
+export const BOOK_RECORD_STATUSES = ['draft', 'review', 'active', 'archived'] as const
 
 export const COPY_AVAILABILITY = [
   'available',

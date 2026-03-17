@@ -14,6 +14,9 @@
 - Added Super Admin settings foundations for branding, metadata, menu/widget visibility, social links, and public feature toggles.
 - Added user management flows with role assignment, permission overrides, deactivation, and audit logging for auth/settings/user changes.
 - Verified `typecheck`, `lint`, `build`, and applied local D1 migration `0002_auth_and_shell.sql`.
+- Added catalog intake schema extensions, R2-backed asset upload flow, ISBN/source URL/AI-assisted metadata draft generation, duplicate detection, and reviewed save flow with bibliographic records separated from physical copies.
+- Added the Bangla-first book intake UI with mobile camera/gallery uploads, client-side cover processing, duplicate resolution choices, and protected route wiring for catalog staff.
+- Verified `typecheck`, `lint`, `build`, and applied local D1 migration `0003_catalog_intake_extensions.sql`.
 
 ## In Progress
 
@@ -22,6 +25,6 @@
 
 ## Next
 
-- Implement book intake, duplicate detection, copy/item management, members, circulation, reminders, and accounting APIs.
+- Implement copy/item management, members, circulation, reminders, and accounting APIs on top of the new catalog intake foundation.
 - Build the remaining dashboard widgets, public catalog flows, competition operations, and print pipelines.
 - Add route-level tests and end-to-end auth/RBAC coverage against local D1.

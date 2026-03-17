@@ -37,7 +37,7 @@ const menuBlueprints: MenuBlueprint[] = [
     href: '/app/books',
     labelBn: 'বই',
     icon: 'ব',
-    permission: 'catalog.view_internal' as PermissionKey,
+    permission: 'catalog.manage_metadata' as PermissionKey,
   },
   {
     key: 'members',
