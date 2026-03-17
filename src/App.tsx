@@ -10,6 +10,7 @@ import { SetupPage } from '@/features/auth/SetupPage'
 import { BookIntakePage } from '@/features/catalog/BookIntakePage'
 import { PlaceholderPage } from '@/features/common/PlaceholderPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
+import { MembersPage } from '@/features/members/MembersPage'
 import { AuditLogsPage } from '@/features/settings/AuditLogsPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 import { UsersPage } from '@/features/users/UsersPage'
@@ -105,10 +106,10 @@ export default function App() {
             <Route path="books" element={<BookIntakePage />} />
           </Route>
 
-          <Route
-            path="members"
-            element={<PlaceholderPage title="সদস্য মডিউল" permission="members.manage" />}
-          />
+          <Route element={<ProtectedRoute permission="members.manage" />}>
+            <Route path="members" element={<MembersPage />} />
+          </Route>
+
           <Route
             path="circulation"
             element={<PlaceholderPage title="ইস্যু ও রিটার্ন" permission="circulation.manage" />}

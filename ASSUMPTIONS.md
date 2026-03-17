@@ -21,3 +21,6 @@
 - Application sessions are stored in Cloudflare D1 with hashed session tokens, transported via HttpOnly cookies, and expire after 14 days of inactivity-free access unless revoked earlier.
 - Password reset is manager-driven in the first release; self-service email reset is deferred until transactional email infrastructure is added.
 - Librarian and Officer roles can operate daily circulation and catalog workflows within granted permissions, but sensitive user/settings changes remain limited to `manager`, `admin`, and `super_admin`.
+- Member photos are treated as privacy-sensitive assets and are served only to authorized staff or the linked self-service member through authenticated application routes.
+- Member CRUD and archival are restricted to `manager` and above in the first release, while self-service members can only view their own profile, history, dues, and payments.
+- ID card generation uses HTML print assets stored in R2-backed export objects in the first release; PDF generation can be added later without changing the print job contract.

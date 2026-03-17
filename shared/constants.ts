@@ -28,7 +28,7 @@ export const ACQUISITION_TYPES = [
   'other',
 ] as const
 
-export const MEMBER_STATUSES = ['active', 'inactive', 'suspended'] as const
+export const MEMBER_STATUSES = ['active', 'inactive', 'suspended', 'expired'] as const
 
 export const BOOK_RECORD_STATUSES = ['draft', 'review', 'active', 'archived'] as const
 

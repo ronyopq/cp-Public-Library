@@ -360,6 +360,103 @@ export interface Member {
   notes?: string | null
 }
 
+export interface MemberListItem extends Member {
+  activeLoanCount: number
+  totalLoanCount: number
+  outstandingDue: number
+  totalPaid: number
+  hasLinkedUser: boolean
+  updatedAt: string
+}
+
+export interface MemberListingPayload {
+  items: MemberListItem[]
+  page: number
+  pageSize: number
+  total: number
+  stats: {
+    totalMembers: number
+    activeMembers: number
+    expiringSoon: number
+    membersWithDues: number
+  }
+}
+
+export interface MemberLoanSnapshot {
+  loanId: string
+  copyItemId: string
+  bibliographicRecordId: string
+  accessionCode: string
+  copyNumber: number
+  title: string
+  authors: string[]
+  issuedAt: string
+  dueAt: string
+  returnedAt?: string | null
+  renewedCount: number
+  fineAccrued: number
+  finePaid: number
+  status: LoanStatus
+}
+
+export interface MemberPaymentSnapshot {
+  paymentId: string
+  amount: number
+  paymentTypeCode: string
+  paymentTypeName: string
+  paidAt: string
+  referenceNo?: string | null
+  note?: string | null
+  status: string
+}
+
+export interface MemberDuesSummary {
+  assessedAmount: number
+  waivedAmount: number
+  paidAmount: number
+  outstandingAmount: number
+  openFineCount: number
+}
+
+export interface MemberPaymentSummary {
+  totalPaidAmount: number
+  paymentCount: number
+  lastPaidAt?: string | null
+}
+
+export interface MemberProfileDetail {
+  member: Member
+  currentBorrowedBooks: MemberLoanSnapshot[]
+  borrowingHistory: MemberLoanSnapshot[]
+  returnHistory: MemberLoanSnapshot[]
+  dues: MemberDuesSummary
+  paymentSummary: MemberPaymentSummary
+  recentPayments: MemberPaymentSnapshot[]
+}
+
+export interface MemberCardTemplate {
+  id: string
+  templateKey: string
+  nameBn: string
+  nameEn: string
+  pageSize: string
+  isDefault: boolean
+  config: {
+    showQr?: boolean
+    showPhoto?: boolean
+    accentColor?: string
+    footerText?: string
+  }
+}
+
+export interface MemberCardPrintJobResult {
+  jobId: string
+  template: MemberCardTemplate
+  memberCount: number
+  outputKey: string
+  outputUrl: string
+}
+
 export interface LoanTransaction {
   id: string
   memberId: string

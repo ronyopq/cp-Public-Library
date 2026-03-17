@@ -17,6 +17,9 @@
 - Added catalog intake schema extensions, R2-backed asset upload flow, ISBN/source URL/AI-assisted metadata draft generation, duplicate detection, and reviewed save flow with bibliographic records separated from physical copies.
 - Added the Bangla-first book intake UI with mobile camera/gallery uploads, client-side cover processing, duplicate resolution choices, and protected route wiring for catalog staff.
 - Verified `typecheck`, `lint`, `build`, and applied local D1 migration `0003_catalog_intake_extensions.sql`.
+- Added member management APIs and Bangla-first staff UI for member create/update/archive, mobile camera/gallery photo upload, searchable listings, detailed borrowing/payment history, and RBAC-protected privacy controls.
+- Added self-service member profile rendering inside the account area, R2-backed private photo delivery, ID card preview generation, and single/bulk ID card print job creation with audit logging.
+- Verified `typecheck`, `lint`, `build`, and applied local D1 migration `0004_member_indexes_and_printing.sql`.
 
 ## In Progress
 
@@ -25,6 +28,6 @@
 
 ## Next
 
-- Implement copy/item management, members, circulation, reminders, and accounting APIs on top of the new catalog intake foundation.
+- Implement copy/item management, circulation, reminders, and accounting APIs on top of the new catalog and member foundations.
 - Build the remaining dashboard widgets, public catalog flows, competition operations, and print pipelines.
 - Add route-level tests and end-to-end auth/RBAC coverage against local D1.

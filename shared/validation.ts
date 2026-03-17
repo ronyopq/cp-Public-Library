@@ -311,6 +311,7 @@ export const bookIntakeSaveSchema = z.object({
 })
 
 export const memberSchema = z.object({
+  memberCode: optionalText(40),
   fullNameBn: z.string().trim().min(2).max(120),
   fullNameEn: z.string().trim().max(120).optional().or(z.literal('')),
   guardianName: z.string().trim().max(120).optional().or(z.literal('')),
@@ -319,11 +320,18 @@ export const memberSchema = z.object({
   nationalId: z.string().trim().max(40).optional().or(z.literal('')),
   addressLine: z.string().trim().min(6).max(240),
   area: z.string().trim().max(120).optional().or(z.literal('')),
-  district: z.enum(BANGLADESH_DIVISIONS).optional(),
+  district: z.enum(BANGLADESH_DIVISIONS).optional().or(z.literal('')),
   dateOfBirth: z.string().trim().max(20).optional().or(z.literal('')),
+  joinedAt: z.string().trim().max(20).optional().or(z.literal('')),
   membershipExpiresAt: z.string().trim().max(20).optional().or(z.literal('')),
   memberStatus: z.enum(MEMBER_STATUSES).default('active'),
+  photoKey: optionalImageKey,
   notes: z.string().trim().max(1000).optional().or(z.literal('')),
+})
+
+export const memberPrintJobSchema = z.object({
+  memberIds: z.array(z.string().trim().min(10).max(64)).min(1).max(50),
+  templateId: z.string().trim().max(80).optional().or(z.literal('')),
 })
 
 export const issueSchema = z.object({

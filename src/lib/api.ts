@@ -73,6 +73,12 @@ export function apiPatch<T>(input: string, body: unknown) {
   })
 }
 
+export function apiDelete<T>(input: string) {
+  return apiRequest<T>(input, {
+    method: 'DELETE',
+  })
+}
+
 export function mediaUrl(key?: string | null) {
   return key ? `/files/${encodeURIComponent(key)}` : null
 }

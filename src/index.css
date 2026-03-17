@@ -745,6 +745,131 @@ img {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.split-grid--member {
+  grid-template-columns: 1.2fr 0.8fr;
+}
+
+.table-link-button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.table-link-button strong {
+  display: block;
+}
+
+.member-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.member-identity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.member-identity-grid span {
+  display: block;
+}
+
+.member-identity-grid strong {
+  display: block;
+  margin-top: 0.18rem;
+}
+
+.member-card-preview {
+  min-height: 18rem;
+  padding: 1rem;
+  border-radius: 1.4rem;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.24), transparent 35%),
+    linear-gradient(160deg, #0d3b66 0%, #1f4f77 100%);
+  color: white;
+  display: grid;
+  gap: 1rem;
+}
+
+.member-card-preview__header,
+.member-card-preview__body,
+.member-card-preview__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+
+.member-card-preview__eyebrow {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+
+.member-card-preview h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.member-card-preview .muted {
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.member-card-preview__photo {
+  width: 5rem;
+  min-width: 5rem;
+  height: 6rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.member-card-preview__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.member-card-preview__meta {
+  flex: 1;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.member-card-preview__meta span {
+  display: block;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.member-card-preview__meta strong {
+  display: block;
+  font-size: 0.88rem;
+}
+
+.member-card-preview__footer {
+  align-items: center;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.print-preview-frame {
+  width: 100%;
+  min-height: 32rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: white;
+}
+
 .error-banner,
 .warning-banner {
   border-radius: 1rem;
@@ -787,7 +912,8 @@ img {
   .split-grid,
   .intake-status-grid,
   .duplicate-action-grid,
-  .duplicate-grid {
+  .duplicate-grid,
+  .member-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -832,7 +958,9 @@ img {
   .asset-upload-grid,
   .intake-status-grid,
   .duplicate-action-grid,
-  .duplicate-grid {
+  .duplicate-grid,
+  .member-summary-grid,
+  .member-identity-grid {
     grid-template-columns: 1fr;
   }
 

@@ -38,6 +38,47 @@ app.get('/api/foundation', (c) =>
 
 app.get('/files/*', async (c) => {
   const key = decodeURIComponent(c.req.path.replace(/^\/files\//, ''))
+
+  if (key.startsWith('members/')) {
+    const user = c.get('sessionUser')
+    if (!user) {
+      return apiError(c, 401, 'unauthorized', 'Member photos require authentication.')
+    }
+
+    if (!user.permissions.includes('members.manage')) {
+      const ownMember = await dbAll<{ id: string }>(
+        c.env.DB,
+        `
+          SELECT id
+          FROM members
+          WHERE user_id = ?
+            AND photo_r2_key = ?
+            AND deleted_at IS NULL
+          LIMIT 1
+        `,
+        [user.id, key],
+      )
+
+      if (
+        !user.permissions.includes('members.self_service') ||
+        ownMember.length === 0
+      ) {
+        return apiError(c, 403, 'insufficient_permission', 'You cannot view this member photo.')
+      }
+    }
+  }
+
+  if (key.startsWith('exports/')) {
+    const user = c.get('sessionUser')
+    if (
+      !user ||
+      (!user.permissions.includes('prints.manage') &&
+        !user.permissions.includes('exports.manage'))
+    ) {
+      return apiError(c, 403, 'insufficient_permission', 'You cannot view this print/export file.')
+    }
+  }
+
   return serveFile(c.env.MEDIA_BUCKET, key)
 })
 

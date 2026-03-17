@@ -5,12 +5,14 @@ import { apiOk } from '../lib/http'
 import { getShellSettings } from '../lib/settings'
 import type { AppEnv } from '../types'
 import { createCatalogRoutes } from './catalog'
+import { createMemberRoutes } from './members'
 
 export function createAppRoutes() {
   const app = new Hono<AppEnv>()
 
   app.use('*', requireAuth())
   app.route('/catalog', createCatalogRoutes())
+  app.route('/members', createMemberRoutes())
 
   app.get('/shell', async (c) => {
     const shellSettings = await getShellSettings(c.env.DB, c.env)
