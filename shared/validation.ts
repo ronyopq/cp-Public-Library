@@ -10,8 +10,10 @@ import {
   DASHBOARD_WIDGET_KEYS,
   FEATURE_FLAG_KEYS,
   FEE_TYPE_CODES,
+  LOAN_RESOLUTION_CODES,
   MEMBER_STATUSES,
   PERMISSION_KEYS,
+  REMINDER_CHANNELS,
 } from './constants'
 
 export const paginationSchema = z.object({
@@ -336,20 +338,102 @@ export const memberPrintJobSchema = z.object({
 
 export const issueSchema = z.object({
   memberId: z.string().trim().min(10).max(64),
-  copyItemId: z.string().trim().min(10).max(64),
-  dueAt: z.string().trim().min(8).max(40),
+  copyItemId: z.string().trim().min(10).max(64).optional().or(z.literal('')),
+  copyBarcode: z.string().trim().max(120).optional().or(z.literal('')),
+  dueAt: z.string().trim().max(40).optional().or(z.literal('')),
+  expectedReturnAt: z.string().trim().max(40).optional().or(z.literal('')),
+  remarks: z.string().trim().max(400).optional().or(z.literal('')),
+}).superRefine((payload, ctx) => {
+  if (!payload.copyItemId && !payload.copyBarcode) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Provide a copy barcode or copy item',
+      path: ['copyBarcode'],
+    })
+  }
 })
 
 export const returnSchema = z.object({
-  loanId: z.string().trim().min(10).max(64),
+  loanId: z.string().trim().min(10).max(64).optional().or(z.literal('')),
+  copyBarcode: z.string().trim().max(120).optional().or(z.literal('')),
+  outcome: z.enum(LOAN_RESOLUTION_CODES).default('returned'),
   condition: z.enum(COPY_CONDITIONS).optional(),
   waiveFine: z.boolean().default(false),
   finePaid: z.coerce.number().min(0).max(100000).default(0),
+  paymentTypeCode: z.string().trim().max(40).optional().or(z.literal('')),
+  remarks: z.string().trim().max(400).optional().or(z.literal('')),
+}).superRefine((payload, ctx) => {
+  if (!payload.loanId && !payload.copyBarcode) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Provide a loan or copy barcode',
+      path: ['copyBarcode'],
+    })
+  }
 })
 
 export const renewSchema = z.object({
   loanId: z.string().trim().min(10).max(64),
-  dueAt: z.string().trim().min(8).max(40),
+  dueAt: z.string().trim().max(40).optional().or(z.literal('')),
+  remarks: z.string().trim().max(400).optional().or(z.literal('')),
+})
+
+export const reservationSchema = z.object({
+  memberId: z.string().trim().min(10).max(64),
+  bibliographicRecordId: z.string().trim().min(10).max(64),
+  note: z.string().trim().max(400).optional().or(z.literal('')),
+})
+
+export const reservationStatusSchema = z.object({
+  status: z.enum(['cancelled', 'expired', 'fulfilled']),
+  note: z.string().trim().max(400).optional().or(z.literal('')),
+})
+
+export const reminderTemplateSchema = z.object({
+  key: z.string().trim().min(2).max(80),
+  nameBn: z.string().trim().min(2).max(120),
+  nameEn: z.string().trim().min(2).max(120),
+  channel: z.enum(REMINDER_CHANNELS),
+  subjectTemplate: z.string().trim().max(200).optional().or(z.literal('')),
+  bodyTemplateBn: z.string().trim().min(2).max(2000),
+  bodyTemplateEn: z.string().trim().max(2000).optional().or(z.literal('')),
+  enabled: z.boolean().default(true),
+})
+
+export const reminderRuleSchema = z.object({
+  key: z.string().trim().min(2).max(80),
+  nameBn: z.string().trim().min(2).max(120),
+  nameEn: z.string().trim().min(2).max(120),
+  reminderType: z.enum(['due_soon', 'overdue', 'reservation_ready']),
+  timing: z.enum(['before_due', 'after_due', 'reservation_ready']),
+  offsetDays: z.coerce.number().int().min(0).max(30),
+  channel: z.enum(REMINDER_CHANNELS),
+  templateKey: z.string().trim().min(2).max(80),
+  enabled: z.boolean().default(true),
+  maxRetries: z.coerce.number().int().min(0).max(10).default(2),
+  retryDelayMinutes: z.coerce.number().int().min(1).max(1440).default(120),
+})
+
+export const circulationSettingsSchema = z.object({
+  policy: z.object({
+    defaultLoanDays: z.coerce.number().int().min(1).max(90),
+    defaultRenewDays: z.coerce.number().int().min(1).max(60),
+    maxRenewals: z.coerce.number().int().min(0).max(10),
+    graceDays: z.coerce.number().int().min(0).max(30),
+    overdueFinePerDay: z.coerce.number().min(0).max(5000),
+    maxFineAmount: z.coerce.number().min(0).max(50000),
+    allowRenewWhenOverdue: z.boolean().default(false),
+    allowReservations: z.boolean().default(true),
+    autoReserveReturnedCopy: z.boolean().default(true),
+    reminderCronEnabled: z.boolean().default(true),
+  }),
+  reminderProviders: z.object({
+    whatsapp: z.string().trim().min(2).max(80),
+    sms: z.string().trim().min(2).max(80),
+    email: z.string().trim().min(2).max(80),
+  }),
+  reminderTemplates: z.array(reminderTemplateSchema).min(1).max(20),
+  reminderRules: z.array(reminderRuleSchema).min(1).max(20),
 })
 
 export const transactionSchema = z.object({

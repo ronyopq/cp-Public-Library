@@ -49,6 +49,42 @@ export function dhakaNow(): string {
   return dayjs().tz(APP_TIMEZONE).toISOString()
 }
 
+export function parseDhakaInputDate(
+  value?: string | null,
+  options: { endOfDay?: boolean } = {},
+): string | null {
+  if (!value?.trim()) {
+    return null
+  }
+
+  const trimmed = value.trim()
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
+    ? dayjs.tz(trimmed, APP_TIMEZONE)
+    : dayjs(trimmed).tz(APP_TIMEZONE)
+
+  if (!parsed.isValid()) {
+    return null
+  }
+
+  return (options.endOfDay ? parsed.endOf('day') : parsed.startOf('day')).toISOString()
+}
+
+export function addDhakaDays(
+  value: string,
+  days: number,
+  options: { endOfDay?: boolean } = {},
+): string {
+  const parsed = dayjs(value).tz(APP_TIMEZONE).add(days, 'day')
+  return (options.endOfDay ? parsed.endOf('day') : parsed.startOf('day')).toISOString()
+}
+
+export function diffDhakaCalendarDays(from: string, to: string): number {
+  return dayjs(to)
+    .tz(APP_TIMEZONE)
+    .startOf('day')
+    .diff(dayjs(from).tz(APP_TIMEZONE).startOf('day'), 'day')
+}
+
 export function toDhakaDisplay(value?: string | null): string {
   if (!value) {
     return 'প্রযোজ্য নয়'

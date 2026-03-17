@@ -9,6 +9,7 @@ import { LoginPage } from '@/features/auth/LoginPage'
 import { SetupPage } from '@/features/auth/SetupPage'
 import { BookIntakePage } from '@/features/catalog/BookIntakePage'
 import { PlaceholderPage } from '@/features/common/PlaceholderPage'
+import { CirculationPage } from '@/features/circulation/CirculationPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { MembersPage } from '@/features/members/MembersPage'
 import { AuditLogsPage } from '@/features/settings/AuditLogsPage'
@@ -110,26 +111,21 @@ export default function App() {
             <Route path="members" element={<MembersPage />} />
           </Route>
 
-          <Route
-            path="circulation"
-            element={<PlaceholderPage title="ইস্যু ও রিটার্ন" permission="circulation.manage" />}
-          />
+          <Route element={<ProtectedRoute permission="circulation.manage" />}>
+            <Route path="circulation" element={<CirculationPage />} />
+          </Route>
+
           <Route
             path="accounts"
-            element={<PlaceholderPage title="হিসাব মডিউল" permission="accounts.view" />}
+            element={<PlaceholderPage title="Accounts module" permission="accounts.view" />}
           />
           <Route
             path="competitions"
-            element={
-              <PlaceholderPage
-                title="প্রতিযোগিতা মডিউল"
-                permission="competitions.manage"
-              />
-            }
+            element={<PlaceholderPage title="Competitions module" permission="competitions.manage" />}
           />
           <Route
             path="printing"
-            element={<PlaceholderPage title="প্রিন্ট সেন্টার" permission="prints.manage" />}
+            element={<PlaceholderPage title="Print center" permission="prints.manage" />}
           />
 
           <Route element={<ProtectedRoute permission="users.manage" />}>

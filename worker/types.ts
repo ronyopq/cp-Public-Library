@@ -8,6 +8,10 @@ export type TaskMessage =
       dueAt: string
     }
   | {
+      type: 'circulation-reminder'
+      reminderId: string
+    }
+  | {
       type: 'export-snapshot'
       exportId: string
       tableNames: string[]

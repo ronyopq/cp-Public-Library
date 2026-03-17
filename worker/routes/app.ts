@@ -5,6 +5,7 @@ import { apiOk } from '../lib/http'
 import { getShellSettings } from '../lib/settings'
 import type { AppEnv } from '../types'
 import { createCatalogRoutes } from './catalog'
+import { createCirculationRoutes } from './circulation'
 import { createMemberRoutes } from './members'
 
 export function createAppRoutes() {
@@ -12,6 +13,7 @@ export function createAppRoutes() {
 
   app.use('*', requireAuth())
   app.route('/catalog', createCatalogRoutes())
+  app.route('/circulation', createCirculationRoutes())
   app.route('/members', createMemberRoutes())
 
   app.get('/shell', async (c) => {

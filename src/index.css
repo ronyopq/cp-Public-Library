@@ -870,6 +870,38 @@ img {
   background: white;
 }
 
+.split-grid--circulation {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.lookup-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.lookup-list__title {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.lookup-list__item {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.95rem;
+  background: var(--panel-subtle);
+  text-align: left;
+}
+
+.lookup-list__item span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 .error-banner,
 .warning-banner {
   border-radius: 1rem;

@@ -20,6 +20,9 @@
 - Added member management APIs and Bangla-first staff UI for member create/update/archive, mobile camera/gallery photo upload, searchable listings, detailed borrowing/payment history, and RBAC-protected privacy controls.
 - Added self-service member profile rendering inside the account area, R2-backed private photo delivery, ID card preview generation, and single/bulk ID card print job creation with audit logging.
 - Verified `typecheck`, `lint`, `build`, and applied local D1 migration `0004_member_indexes_and_printing.sql`.
+- Added the circulation backend with issue/return/renew flows, barcode-based copy lookup, reservation handling, overdue snapshot refresh, fine assessment/payment recording, and reminder scheduling backed by D1 + Queues + Cron.
+- Added a Bangla-first circulation workspace for quick issue/return, due and overdue loan lists, reservation creation/cancellation, reminder logs, and manager-only policy/reminder settings.
+- Verified `typecheck`, `lint`, `build`, and applied local D1 migration `0005_circulation_and_reminders.sql`.
 
 ## In Progress
 
@@ -28,6 +31,6 @@
 
 ## Next
 
-- Implement copy/item management, circulation, reminders, and accounting APIs on top of the new catalog and member foundations.
+- Implement copy/item management and deeper accounting/reporting flows on top of the new catalog, member, and circulation foundations.
 - Build the remaining dashboard widgets, public catalog flows, competition operations, and print pipelines.
 - Add route-level tests and end-to-end auth/RBAC coverage against local D1.

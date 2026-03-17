@@ -9,9 +9,13 @@ import type {
   FEATURE_FLAG_KEYS,
   FEE_TYPE_CODES,
   LOAN_STATUSES,
+  LOAN_RESOLUTION_CODES,
   MENU_KEYS,
   MEMBER_STATUSES,
   PERMISSION_KEYS,
+  REMINDER_CHANNELS,
+  REMINDER_DELIVERY_STATUSES,
+  RESERVATION_STATUSES,
 } from './constants'
 
 export type AppRole = (typeof APP_ROLES)[number]
@@ -19,6 +23,7 @@ export type CopyCondition = (typeof COPY_CONDITIONS)[number]
 export type AcquisitionType = (typeof ACQUISITION_TYPES)[number]
 export type MemberStatus = (typeof MEMBER_STATUSES)[number]
 export type LoanStatus = (typeof LOAN_STATUSES)[number]
+export type LoanResolutionCode = (typeof LOAN_RESOLUTION_CODES)[number]
 export type CompetitionStatus = (typeof COMPETITION_STATUSES)[number]
 export type CopyAvailability = (typeof COPY_AVAILABILITY)[number]
 export type BookRecordStatus = (typeof BOOK_RECORD_STATUSES)[number]
@@ -27,6 +32,9 @@ export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number]
 export type MenuKey = (typeof MENU_KEYS)[number]
 export type DashboardWidgetKey = (typeof DASHBOARD_WIDGET_KEYS)[number]
 export type PermissionKey = (typeof PERMISSION_KEYS)[number]
+export type ReservationStatus = (typeof RESERVATION_STATUSES)[number]
+export type ReminderChannel = (typeof REMINDER_CHANNELS)[number]
+export type ReminderDeliveryStatus = (typeof REMINDER_DELIVERY_STATUSES)[number]
 
 export interface ApiErrorShape {
   code: string
@@ -455,6 +463,198 @@ export interface MemberCardPrintJobResult {
   memberCount: number
   outputKey: string
   outputUrl: string
+}
+
+export interface LookupOption {
+  id: string
+  label: string
+  sublabel?: string | null
+}
+
+export interface PaymentTypeOption {
+  id: string
+  code: string
+  nameBn: string
+  nameEn: string
+}
+
+export interface CirculationPolicySettings {
+  defaultLoanDays: number
+  defaultRenewDays: number
+  maxRenewals: number
+  graceDays: number
+  overdueFinePerDay: number
+  maxFineAmount: number
+  allowRenewWhenOverdue: boolean
+  allowReservations: boolean
+  autoReserveReturnedCopy: boolean
+  reminderCronEnabled: boolean
+}
+
+export interface ReminderProviderSettings {
+  whatsapp: string
+  sms: string
+  email: string
+}
+
+export interface ReminderTemplateDefinition {
+  key: string
+  nameBn: string
+  nameEn: string
+  channel: ReminderChannel
+  subjectTemplate?: string | null
+  bodyTemplateBn: string
+  bodyTemplateEn?: string | null
+  enabled: boolean
+}
+
+export interface ReminderRuleDefinition {
+  key: string
+  nameBn: string
+  nameEn: string
+  reminderType: 'due_soon' | 'overdue' | 'reservation_ready'
+  timing: 'before_due' | 'after_due' | 'reservation_ready'
+  offsetDays: number
+  channel: ReminderChannel
+  templateKey: string
+  enabled: boolean
+  maxRetries: number
+  retryDelayMinutes: number
+}
+
+export interface CirculationSettings {
+  policy: CirculationPolicySettings
+  reminderProviders: ReminderProviderSettings
+  reminderTemplates: ReminderTemplateDefinition[]
+  reminderRules: ReminderRuleDefinition[]
+}
+
+export interface CirculationStats {
+  activeLoans: number
+  dueToday: number
+  dueSoon: number
+  overdueLoans: number
+  openFines: number
+  activeReservations: number
+  queuedReminders: number
+}
+
+export interface ReservationRecord {
+  id: string
+  memberId: string
+  memberCode: string
+  memberNameBn: string
+  bibliographicRecordId: string
+  title: string
+  status: ReservationStatus
+  queuePosition: number
+  note?: string | null
+  requestedAt: string
+  readyAt?: string | null
+  expiresAt?: string | null
+}
+
+export interface ReminderLogRecord {
+  id: string
+  loanId?: string | null
+  reservationId?: string | null
+  memberId: string
+  memberNameBn: string
+  memberCode: string
+  title?: string | null
+  reminderType: string
+  channel: ReminderChannel
+  providerKey: string
+  scheduledFor: string
+  sentAt?: string | null
+  status: ReminderDeliveryStatus
+  retryCount: number
+  lastError?: string | null
+  templateKey?: string | null
+  recipientAddress?: string | null
+}
+
+export interface CirculationCopyLookup {
+  copyItemId: string
+  bibliographicRecordId: string
+  accessionCode: string
+  barcodeValue: string
+  title: string
+  authors: string[]
+  availability: CopyAvailability
+  condition: CopyCondition
+  shelfLabel?: string | null
+  rackLabel?: string | null
+  roomLabel?: string | null
+  activeLoan?: {
+    loanId: string
+    memberId: string
+    memberNameBn: string
+    memberCode: string
+    dueAt: string
+    status: LoanStatus
+  } | null
+  reservations: ReservationRecord[]
+}
+
+export interface LoanListItem {
+  id: string
+  memberId: string
+  memberNameBn: string
+  memberCode: string
+  copyItemId: string
+  bibliographicRecordId: string
+  accessionCode: string
+  barcodeValue: string
+  title: string
+  authors: string[]
+  issueDate: string
+  dueDate: string
+  expectedReturnDate: string
+  actualReturnDate?: string | null
+  overdueDays: number
+  renewalCount: number
+  fineAmount: number
+  status: LoanStatus
+  remarks?: string | null
+  resolutionCode?: LoanResolutionCode | null
+  copyAvailability: CopyAvailability
+  copyCondition: CopyCondition
+}
+
+export interface CirculationLoanListPayload {
+  items: LoanListItem[]
+  page: number
+  pageSize: number
+  total: number
+  stats: CirculationStats
+}
+
+export interface CirculationDashboardPayload {
+  stats: CirculationStats
+  dueSoonLoans: LoanListItem[]
+  overdueLoans: LoanListItem[]
+  activeLoans: LoanListItem[]
+  reservations: ReservationRecord[]
+  reminderLogs: ReminderLogRecord[]
+  settings: CirculationSettings
+  paymentTypes: PaymentTypeOption[]
+}
+
+export interface CirculationIssueResult {
+  loan: LoanListItem
+  copy: CirculationCopyLookup
+}
+
+export interface CirculationReturnResult {
+  loan: LoanListItem
+  fineAmount: number
+  finePaid: number
+  outstandingFine: number
+}
+
+export interface CirculationRenewResult {
+  loan: LoanListItem
 }
 
 export interface LoanTransaction {

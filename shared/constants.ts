@@ -34,7 +34,7 @@ export const BOOK_RECORD_STATUSES = ['draft', 'review', 'active', 'archived'] as
 
 export const COPY_AVAILABILITY = [
   'available',
-  'issued',
+  'on_loan',
   'reserved',
   'repair',
   'lost',
@@ -44,8 +44,35 @@ export const COPY_AVAILABILITY = [
 export const LOAN_STATUSES = [
   'issued',
   'returned',
-  'renewed',
   'overdue',
+  'lost',
+  'closed',
+] as const
+
+export const LOAN_RESOLUTION_CODES = [
+  'returned',
+  'damaged',
+  'lost',
+  'withdrawn',
+  'repair',
+] as const
+
+export const RESERVATION_STATUSES = [
+  'active',
+  'ready',
+  'fulfilled',
+  'cancelled',
+  'expired',
+] as const
+
+export const REMINDER_CHANNELS = ['whatsapp', 'sms', 'email'] as const
+
+export const REMINDER_DELIVERY_STATUSES = [
+  'queued',
+  'sent',
+  'failed',
+  'retried',
+  'cancelled',
 ] as const
 
 export const COMPETITION_STATUSES = [

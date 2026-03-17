@@ -24,3 +24,7 @@
 - Member photos are treated as privacy-sensitive assets and are served only to authorized staff or the linked self-service member through authenticated application routes.
 - Member CRUD and archival are restricted to `manager` and above in the first release, while self-service members can only view their own profile, history, dues, and payments.
 - ID card generation uses HTML print assets stored in R2-backed export objects in the first release; PDF generation can be added later without changing the print job contract.
+- Circulation defaults to a 14-day loan period, 7-day renewal period, maximum 2 renewals, and does not allow renewal once a loan is already overdue unless a manager changes policy settings.
+- Overdue fines are calculated by calendar day in `Asia/Dhaka`, honoring configurable grace days and a maximum fine cap stored in D1-backed application settings.
+- Reservations operate at the bibliographic-record level rather than locking a specific copy up front; when an available copy exists, the first reservation is immediately marked `ready` and the copy is held as `reserved`.
+- Reminder delivery uses provider stubs (`whatsapp_stub`, `sms_stub`, `email_stub`) in the first release, but the queue/cron workflow, templates, rules, retry tracking, and provider abstraction are designed so real channel integrations can replace the stubs without schema changes.

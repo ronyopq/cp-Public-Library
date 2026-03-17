@@ -1,10 +1,17 @@
 import { Hono } from 'hono'
 import { loadSession } from './lib/auth'
-import { dbAll, dbRun } from './lib/db'
+import { dbAll } from './lib/db'
 import { apiError, apiOk } from './lib/http'
 import { getFeatureFlags } from './lib/settings'
 import { originGuard, securityHeaders } from './lib/security'
 import { serveFile } from './lib/storage'
+import {
+  getReminderForDispatch,
+  markReminderFailed,
+  markReminderSent,
+  scheduleCirculationReminders,
+} from './services/circulation'
+import { dispatchReminder } from './services/reminders'
 import { createAppRoutes } from './routes/app'
 import { createAdminRoutes } from './routes/admin'
 import { createAuthRoutes } from './routes/auth'
@@ -98,97 +105,40 @@ app.onError((error, c) => {
 })
 
 async function runScheduledReminderSweep(env: AppBindings) {
-  const overdueLoans = await dbAll<{
-    loanId: string
-    memberId: string
-    dueAt: string
-  }>(
-    env.DB,
-    `
-      SELECT
-        id AS loanId,
-        member_id AS memberId,
-        due_at AS dueAt
-      FROM loans
-      WHERE status IN ('issued', 'overdue')
-        AND due_at < ?
-      LIMIT 200
-    `,
-    [new Date().toISOString()],
-  )
-
-  for (const loan of overdueLoans) {
-    await env.TASK_QUEUE.send({
-      type: 'overdue-reminder',
-      loanId: loan.loanId,
-      memberId: loan.memberId,
-      dueAt: loan.dueAt,
-    })
-  }
+  await scheduleCirculationReminders(env)
 }
 
 async function handleTaskMessage(env: AppBindings, message: TaskMessage) {
-  if (message.type !== 'overdue-reminder') {
+  if (message.type === 'circulation-reminder') {
+    const reminder = await getReminderForDispatch(env.DB, message.reminderId)
+    if (reminder.deliveryStatus === 'sent' || reminder.deliveryStatus === 'cancelled') {
+      return
+    }
+
+    try {
+      const result = await dispatchReminder(env, {
+        channel: reminder.channel,
+        providerKey: reminder.providerKey,
+        recipient: reminder.recipientAddress ?? '',
+        subject: reminder.payload.subject ?? null,
+        body: reminder.payload.body || reminder.contentSnapshot || '',
+      })
+      await markReminderSent(env.DB, reminder.id, result.providerReference)
+    } catch (error) {
+      await markReminderFailed(
+        env.DB,
+        reminder.id,
+        error instanceof Error ? error.message : 'Reminder dispatch failed.',
+        reminder.payload,
+        reminder.retryCount,
+      )
+    }
     return
   }
 
-  const scheduleDate = new Date().toISOString().slice(0, 10)
-  const dedupeKey = `${message.loanId}:${scheduleDate}:overdue`
-
-  await dbRun(
-    env.DB,
-    `
-      INSERT OR IGNORE INTO reminders (
-        id,
-        loan_id,
-        member_id,
-        reminder_type,
-        channel,
-        scheduled_for,
-        sent_at,
-        status,
-        dedupe_key,
-        content_snapshot,
-        created_at
-      )
-      VALUES (?, ?, ?, 'overdue', 'system', ?, ?, 'sent', ?, ?, ?)
-    `,
-    [
-      crypto.randomUUID(),
-      message.loanId,
-      message.memberId,
-      new Date().toISOString(),
-      new Date().toISOString(),
-      dedupeKey,
-      `Overdue reminder generated for loan ${message.loanId}`,
-      new Date().toISOString(),
-    ],
-  )
-
-  await dbRun(
-    env.DB,
-    `
-      INSERT INTO loan_history (
-        id,
-        loan_id,
-        event_type,
-        previous_status,
-        next_status,
-        event_at,
-        actor_user_id,
-        note,
-        metadata_json
-      )
-      VALUES (?, ?, 'reminder_generated', 'overdue', 'overdue', ?, NULL, ?, ?)
-    `,
-    [
-      crypto.randomUUID(),
-      message.loanId,
-      new Date().toISOString(),
-      'System reminder created',
-      JSON.stringify({ dueAt: message.dueAt }),
-    ],
-  )
+  if (message.type === 'overdue-reminder') {
+    return
+  }
 }
 
 const worker: ExportedHandler<AppBindings, TaskMessage> = {
