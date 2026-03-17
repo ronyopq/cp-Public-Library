@@ -1,0 +1,31 @@
+# This file tells Git which changes should be committed
+
+# All source code
+src/*
+migrations/*
+scripts/*
+
+# All documentation
+docs/*
+README.md
+QUICKSTART.md
+ASSUMPTIONS.md
+COMPLETION_SUMMARY.md
+
+# Configuration templates
+.env.example
+tsconfig.json
+prettier.config.js
+eslint.config.mjs
+
+# Meta files
+.gitignore
+.github/*
+LICENSE
+package.json
+
+# Keep everything except:
+# - node_modules/ (recreate with npm install)
+# - .wrangler/ (local dev only)
+# - coverage/ (rebuild before deployment)
+# - .env.local (secrets)

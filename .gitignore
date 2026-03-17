@@ -1,0 +1,61 @@
+# Dependency directories
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment variables (NEVER commit secrets!)
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.env.*.local
+
+# Cloudflare
+.wrangler/
+wrangler.toml.local
+
+# Testing
+coverage/
+.nyc_output/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Lock files (optional - uncomment to commit)
+# pnpm-lock.yaml
+# package-lock.json
+# yarn.lock
+
+# Local development
+.env.example.local
+.turbo/
+
+# Database backups
+*.sql.bak
+backups/
