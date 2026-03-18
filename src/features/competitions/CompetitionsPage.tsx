@@ -70,6 +70,11 @@ export function CompetitionsPage() {
   >(null)
   const [resultsCompetitionId, setResultsCompetitionId] = useState<string>('')
 
+  const dashboardQuery = useQuery({
+    queryKey: ['competitions-dashboard'],
+    queryFn: () => apiRequest<CompetitionAdminDashboardPayload>('/api/app/competitions/dashboard'),
+  })
+
   const activeCompetitionId =
     selectedCompetitionId || dashboardQuery.data?.competitions[0]?.id || ''
   const detailQuery = useQuery({
@@ -100,11 +105,6 @@ export function CompetitionsPage() {
       })) ?? [],
     [selectedDetail?.registrations],
   )
-
-  const dashboardQuery = useQuery({
-    queryKey: ['competitions-dashboard'],
-    queryFn: () => apiRequest<CompetitionAdminDashboardPayload>('/api/app/competitions/dashboard'),
-  })
 
   const competitionMutation = useMutation({
     mutationFn: () => {
@@ -162,6 +162,30 @@ export function CompetitionsPage() {
       await queryClient.invalidateQueries({ queryKey: ['competitions-dashboard'] })
     },
   })
+
+  function updateResultDraft(
+    index: number,
+    updater: (entry: {
+      registrationId: string
+      positionRank: string
+      positionLabel: string
+      score: string
+      publishedNote: string
+    }) => {
+      registrationId: string
+      positionRank: string
+      positionLabel: string
+      score: string
+      publishedNote: string
+    },
+  ) {
+    setResultsCompetitionId(activeCompetitionId)
+    setResultsDraft((current) =>
+      (current ?? effectiveResultsDraft).map((entry, entryIndex) =>
+        entryIndex === index ? updater(entry) : entry,
+      ),
+    )
+  }
 
   function openCreateModal() {
     setEditingCompetition(null)
@@ -293,7 +317,7 @@ export function CompetitionsPage() {
                   label="ক্যাটালগ মেনু দেখান"
                   checked={publicSettings.menu.catalog}
                   onChange={(event) =>
-                    setPublicSettings((current) =>
+                    setPublicSettingsDraft((current) =>
                       current
                         ? { ...current, menu: { ...current.menu, catalog: event.target.checked } }
                         : current,
@@ -304,7 +328,7 @@ export function CompetitionsPage() {
                   label="প্রতিযোগিতা মেনু দেখান"
                   checked={publicSettings.menu.competitions}
                   onChange={(event) =>
-                    setPublicSettings((current) =>
+                    setPublicSettingsDraft((current) =>
                       current
                         ? {
                             ...current,
@@ -318,7 +342,7 @@ export function CompetitionsPage() {
                   label="ফলাফল মেনু দেখান"
                   checked={publicSettings.menu.results}
                   onChange={(event) =>
-                    setPublicSettings((current) =>
+                    setPublicSettingsDraft((current) =>
                       current
                         ? { ...current, menu: { ...current.menu, results: event.target.checked } }
                         : current,
@@ -329,7 +353,7 @@ export function CompetitionsPage() {
                   label="পাবলিক ফলাফল দৃশ্যমান"
                   checked={publicSettings.competition.resultsVisible}
                   onChange={(event) =>
-                    setPublicSettings((current) =>
+                    setPublicSettingsDraft((current) =>
                       current
                         ? {
                             ...current,
@@ -346,7 +370,7 @@ export function CompetitionsPage() {
                   label="ফি নোটিশ দেখান"
                   checked={publicSettings.competition.showFeeNotice}
                   onChange={(event) =>
-                    setPublicSettings((current) =>
+                    setPublicSettingsDraft((current) =>
                       current
                         ? {
                             ...current,
@@ -363,7 +387,7 @@ export function CompetitionsPage() {
                   label="প্রিন্টযোগ্য স্বীকৃতি"
                   checked={publicSettings.competition.printableAcknowledgement}
                   onChange={(event) =>
-                    setPublicSettings((current) =>
+                    setPublicSettingsDraft((current) =>
                       current
                         ? {
                             ...current,
@@ -385,7 +409,7 @@ export function CompetitionsPage() {
                     label={key}
                     checked={Boolean(value)}
                     onChange={(event) =>
-                      setPublicSettings((current) =>
+                      setPublicSettingsDraft((current) =>
                         current
                           ? {
                               ...current,
@@ -482,13 +506,10 @@ export function CompetitionsPage() {
                         <SelectInput
                           value={item.registrationId}
                           onChange={(event) =>
-                            setResultsDraft((current) =>
-                              (current ?? effectiveResultsDraft).map((entry, entryIndex) =>
-                                entryIndex === index
-                                  ? { ...entry, registrationId: event.target.value }
-                                  : entry,
-                              ),
-                            )
+                            updateResultDraft(index, (entry) => ({
+                              ...entry,
+                              registrationId: event.target.value,
+                            }))
                           }
                         >
                           <option value="">একটি নিবন্ধন বাছাই করুন</option>
@@ -504,13 +525,10 @@ export function CompetitionsPage() {
                           type="number"
                           value={item.positionRank}
                           onChange={(event) =>
-                            setResultsDraft((current) =>
-                              (current ?? effectiveResultsDraft).map((entry, entryIndex) =>
-                                entryIndex === index
-                                  ? { ...entry, positionRank: event.target.value }
-                                  : entry,
-                              ),
-                            )
+                            updateResultDraft(index, (entry) => ({
+                              ...entry,
+                              positionRank: event.target.value,
+                            }))
                           }
                         />
                       </FormField>
@@ -518,13 +536,10 @@ export function CompetitionsPage() {
                         <TextInput
                           value={item.positionLabel}
                           onChange={(event) =>
-                            setResultsDraft((current) =>
-                              (current ?? effectiveResultsDraft).map((entry, entryIndex) =>
-                                entryIndex === index
-                                  ? { ...entry, positionLabel: event.target.value }
-                                  : entry,
-                              ),
-                            )
+                            updateResultDraft(index, (entry) => ({
+                              ...entry,
+                              positionLabel: event.target.value,
+                            }))
                           }
                         />
                       </FormField>
@@ -533,13 +548,10 @@ export function CompetitionsPage() {
                           type="number"
                           value={item.score}
                           onChange={(event) =>
-                            setResultsDraft((current) =>
-                              (current ?? effectiveResultsDraft).map((entry, entryIndex) =>
-                                entryIndex === index
-                                  ? { ...entry, score: event.target.value }
-                                  : entry,
-                              ),
-                            )
+                            updateResultDraft(index, (entry) => ({
+                              ...entry,
+                              score: event.target.value,
+                            }))
                           }
                         />
                       </FormField>
@@ -547,13 +559,10 @@ export function CompetitionsPage() {
                         <TextAreaInput
                           value={item.publishedNote}
                           onChange={(event) =>
-                            setResultsDraft((current) =>
-                              (current ?? effectiveResultsDraft).map((entry, entryIndex) =>
-                                entryIndex === index
-                                  ? { ...entry, publishedNote: event.target.value }
-                                  : entry,
-                              ),
-                            )
+                            updateResultDraft(index, (entry) => ({
+                              ...entry,
+                              publishedNote: event.target.value,
+                            }))
                           }
                         />
                       </FormField>

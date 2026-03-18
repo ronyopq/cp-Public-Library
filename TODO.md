@@ -26,14 +26,17 @@
 - Added accounting schema extensions for fee types, member due periods, payment allocations, richer receipts, report/export metadata, and ledger links via local migration `0006_accounting_and_reports.sql`.
 - Added Bangla-first accounting APIs and UI for dues collection, multi-month payment allocation, member ledgers, receipt reprint, fee-type administration, report filtering, CSV export, HTML print preview, and manager-only payment voiding with audit logs.
 - Verified `typecheck`, `lint`, `build`, `db:migrate:local`, and `db:seed:local` after the accounting implementation.
+- Added public catalog APIs and Bangla-first public pages for search, filter, newest/popular sorting, safe public book details, and QR-code-based redirection to public book pages.
+- Added competition management APIs and staff UI for create/update, registration oversight, result entry/publication, and public visibility controls, plus public competition listing, registration, acknowledgement, and result pages.
+- Verified `typecheck`, `lint`, `build`, and `db:migrate:local` after the public catalog and competition implementation.
 
 ## In Progress
 
-- Worker API architecture and shared TypeScript contracts are being expanded from auth/admin into the remaining library modules.
-- Bangla-first responsive frontend shell is in place and needs deeper module coverage for cataloging, members, circulation, and finance.
+- Worker API architecture and shared TypeScript contracts are being expanded further into copy management, print center workflows, exports, and dashboard analytics depth.
+- Bangla-first responsive frontend shell is in place across admin and public flows and still needs deeper coverage for copy inventory, print center, and richer analytics/report presentation.
 
 ## Next
 
-- Implement copy/item management and deepen accounting into full statement views, scheduled dues generation, and optional richer spreadsheet/PDF export formats.
-- Build the remaining dashboard widgets, public catalog flows, competition operations, and print pipelines.
+- Implement copy/item management, print-center operations, and deeper accounting statement/export workflows.
+- Build the remaining dashboard widgets, more advanced public search refinements, and print/export pipelines.
 - Add route-level tests and end-to-end auth/RBAC coverage against local D1.
