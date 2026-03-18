@@ -358,6 +358,10 @@ img {
   gap: 1rem;
 }
 
+.stats-grid--dashboard {
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
 .stat-card {
   padding: 1rem;
   border-radius: 1.25rem;
@@ -484,6 +488,71 @@ img {
 .section-grid {
   display: grid;
   gap: 1rem;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.analytics-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.analytics-card__header,
+.analytics-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.analytics-filter-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-grid--analytics {
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.analytics-ranking-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.analytics-ranking-item {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.95rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.analytics-ranking-list__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.analytics-bar-track {
+  width: 100%;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: rgba(13, 59, 102, 0.08);
+  overflow: hidden;
+}
+
+.analytics-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--sidebar-accent), var(--primary));
 }
 
 .split-grid {
@@ -1079,6 +1148,10 @@ img {
   gap: 1rem;
 }
 
+.public-hero__stats--four {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .public-catalog-layout {
   display: grid;
   grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
@@ -1226,6 +1299,8 @@ img {
   .duplicate-grid,
   .member-summary-grid,
   .month-selection-grid,
+  .analytics-grid,
+  .analytics-card-grid,
   .public-book-grid,
   .public-competition-grid,
   .public-detail-grid {
@@ -1293,6 +1368,8 @@ img {
   .form-grid--three,
   .stats-grid,
   .split-grid,
+  .analytics-grid,
+  .analytics-card-grid,
   .asset-upload-grid,
   .intake-status-grid,
   .duplicate-action-grid,
@@ -1300,6 +1377,7 @@ img {
   .member-summary-grid,
   .member-identity-grid,
   .month-selection-grid,
+  .form-grid--analytics,
   .public-book-grid,
   .public-competition-grid,
   .public-detail-grid {

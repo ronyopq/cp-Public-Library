@@ -6,6 +6,7 @@ const optionalText = (max: number) => z.string().trim().max(max).optional().or(z
 export const publicSiteSettingsSchema = z.object({
   menu: z.object({
     catalog: z.boolean().default(true),
+    analytics: z.boolean().default(true),
     competitions: z.boolean().default(true),
     results: z.boolean().default(true),
   }),

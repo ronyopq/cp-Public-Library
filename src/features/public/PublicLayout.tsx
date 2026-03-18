@@ -12,6 +12,7 @@ export function PublicLayout() {
     featureFlags?.public_catalog_enabled && publicSettings?.menu.catalog
       ? { to: '/catalog', label: 'ক্যাটালগ' }
       : null,
+    publicSettings?.menu.analytics ? { to: '/analytics', label: 'অ্যানালিটিক্স' } : null,
     featureFlags?.competitions_module_enabled && publicSettings?.menu.competitions
       ? { to: '/competitions', label: 'প্রতিযোগিতা' }
       : null,
@@ -22,11 +23,13 @@ export function PublicLayout() {
       : null,
   ].filter(Boolean) as Array<{ to: string; label: string }>
 
+  const homePath = menuItems[0]?.to ?? '/login'
+
   return (
     <div className="public-shell">
       <header className="public-header">
         <div className="public-header__bar">
-          <NavLink to="/catalog" className="public-brand" onClick={() => setMenuOpen(false)}>
+          <NavLink to={homePath} className="public-brand" onClick={() => setMenuOpen(false)}>
             <AppLogo profile={profile} />
           </NavLink>
 
@@ -74,7 +77,7 @@ export function PublicLayout() {
       <footer className="public-footer">
         <div>
           <strong>{profile?.siteNameBn ?? 'কমিউনিটি লাইব্রেরি'}</strong>
-          <p>{profile?.taglineBn ?? 'বাংলা-প্রথম জনসাধারণের ক্যাটালগ ও প্রতিযোগিতা সেবা'}</p>
+          <p>{profile?.taglineBn ?? 'বাংলা-প্রথম পাঠকসেবা, ক্যাটালগ ও ফলাফল প্ল্যাটফর্ম'}</p>
         </div>
         <div className="public-footer__links">
           {socialLinks.map((link) => (

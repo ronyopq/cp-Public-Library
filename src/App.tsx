@@ -12,6 +12,7 @@ import { BookIntakePage } from '@/features/catalog/BookIntakePage'
 import { CompetitionsPage } from '@/features/competitions/CompetitionsPage'
 import { PlaceholderPage } from '@/features/common/PlaceholderPage'
 import { CompetitionAcknowledgementPage } from '@/features/public/CompetitionAcknowledgementPage'
+import { PublicAnalyticsPage } from '@/features/public/PublicAnalyticsPage'
 import { PublicBookPage } from '@/features/public/PublicBookPage'
 import { PublicCatalogPage } from '@/features/public/PublicCatalogPage'
 import { PublicCompetitionDetailPage } from '@/features/public/PublicCompetitionDetailPage'
@@ -104,6 +105,10 @@ function RootRedirect() {
     return <Navigate to="/catalog" replace />
   }
 
+  if (publicSettings?.menu.analytics !== false) {
+    return <Navigate to="/analytics" replace />
+  }
+
   if (
     featureFlags?.competitions_module_enabled &&
     publicSettings?.menu.competitions !== false
@@ -137,6 +142,7 @@ export default function App() {
       <Route element={<PublicSiteRoute />}>
         <Route element={<PublicLayout />}>
           <Route path="/catalog" element={<PublicCatalogPage />} />
+          <Route path="/analytics" element={<PublicAnalyticsPage />} />
           <Route path="/books/:recordId/:slug" element={<PublicBookPage />} />
           <Route path="/qr/:shortCode" element={<PublicQrPage />} />
           <Route path="/competitions" element={<PublicCompetitionsPage />} />

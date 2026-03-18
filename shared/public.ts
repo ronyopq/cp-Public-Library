@@ -5,6 +5,7 @@ export type PublicCatalogSort = 'newest' | 'popular'
 
 export interface PublicMenuVisibility {
   catalog: boolean
+  analytics: boolean
   competitions: boolean
   results: boolean
 }

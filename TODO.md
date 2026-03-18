@@ -29,14 +29,17 @@
 - Added public catalog APIs and Bangla-first public pages for search, filter, newest/popular sorting, safe public book details, and QR-code-based redirection to public book pages.
 - Added competition management APIs and staff UI for create/update, registration oversight, result entry/publication, and public visibility controls, plus public competition listing, registration, acknowledgement, and result pages.
 - Verified `typecheck`, `lint`, `build`, and `db:migrate:local` after the public catalog and competition implementation.
+- Added filterable staff dashboard analytics for titles/copies/taxonomy/member/circulation totals, recent additions, chart-ready monthly series, manager-scoped audit activity, and export-ready CSV/HTML hooks persisted through R2 + `exports`.
+- Added privacy-safe public analytics with month/year/custom filters, anonymized top readers, most-read books, popular authors/categories/publishers, public menu visibility control, and local D1 performance indexes via `0007_dashboard_analytics_indexes.sql`.
+- Verified `typecheck`, `lint`, `build`, and `db:migrate:local` after the analytics implementation.
 
 ## In Progress
 
-- Worker API architecture and shared TypeScript contracts are being expanded further into copy management, print center workflows, exports, and dashboard analytics depth.
-- Bangla-first responsive frontend shell is in place across admin and public flows and still needs deeper coverage for copy inventory, print center, and richer analytics/report presentation.
+- Worker API architecture and shared TypeScript contracts are being expanded further into copy management, print center workflows, and deeper export/report automation.
+- Bangla-first responsive frontend shell is in place across admin and public flows and still needs deeper coverage for copy inventory, print center, and advanced visual analytics polish.
 
 ## Next
 
 - Implement copy/item management, print-center operations, and deeper accounting statement/export workflows.
-- Build the remaining dashboard widgets, more advanced public search refinements, and print/export pipelines.
+- Add richer chart visualizations/code-splitting for the growing analytics-heavy bundle and expand public search/discovery refinements.
 - Add route-level tests and end-to-end auth/RBAC coverage against local D1.

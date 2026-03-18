@@ -326,6 +326,20 @@ export function CompetitionsPage() {
                 />
                 <CheckboxInput
                   label="প্রতিযোগিতা মেনু দেখান"
+                  checked={publicSettings.menu.analytics}
+                  onChange={(event) =>
+                    setPublicSettingsDraft((current) =>
+                      current
+                        ? {
+                            ...current,
+                            menu: { ...current.menu, analytics: event.target.checked },
+                          }
+                        : current,
+                    )
+                  }
+                />
+                <CheckboxInput
+                  label="à¦ªà§à¦°à¦¤à¦¿à¦¯à§‹à¦—à¦¿à¦¤à¦¾ à¦®à§‡à¦¨à§ à¦¦à§‡à¦–à¦¾à¦¨"
                   checked={publicSettings.menu.competitions}
                   onChange={(event) =>
                     setPublicSettingsDraft((current) =>

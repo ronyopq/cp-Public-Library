@@ -1,8 +1,10 @@
+import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
-import { requireAuth } from '../lib/auth'
-import { dbAll, dbValue } from '../lib/db'
-import { apiOk } from '../lib/http'
+import { analyticsExportSchema, analyticsFilterSchema } from '@shared/index'
+import { requireAuth, requirePermission } from '../lib/auth'
+import { apiError, apiOk } from '../lib/http'
 import { getShellSettings } from '../lib/settings'
+import { exportStaffDashboard, getStaffDashboard } from '../services/analytics'
 import type { AppEnv } from '../types'
 import { createAccountRoutes } from './accounts'
 import { createCatalogRoutes } from './catalog'
@@ -30,90 +32,65 @@ export function createAppRoutes() {
   })
 
   app.get('/dashboard', async (c) => {
-    const totalTitles = Number(
-      (await dbValue<number>(
-        c.env.DB,
-        `SELECT COUNT(*) AS total FROM bibliographic_records WHERE deleted_at IS NULL`,
-      )) ?? 0,
-    )
-    const totalCopies = Number(
-      (await dbValue<number>(
-        c.env.DB,
-        `SELECT COUNT(*) AS total FROM book_copies WHERE deleted_at IS NULL`,
-      )) ?? 0,
-    )
-    const activeMembers = Number(
-      (await dbValue<number>(
-        c.env.DB,
-        `SELECT COUNT(*) AS total FROM members WHERE deleted_at IS NULL AND status = 'active'`,
-      )) ?? 0,
-    )
-    const issuedCopies = Number(
-      (await dbValue<number>(
-        c.env.DB,
-        `SELECT COUNT(*) AS total FROM loans WHERE status IN ('issued', 'overdue')`,
-      )) ?? 0,
-    )
-    const overdueCopies = Number(
-      (await dbValue<number>(
-        c.env.DB,
-        `SELECT COUNT(*) AS total FROM loans WHERE status = 'overdue'`,
-      )) ?? 0,
-    )
-    const todayCollections = Number(
-      (await dbValue<number>(
-        c.env.DB,
-        `
-          SELECT COALESCE(SUM(amount), 0) AS total
-          FROM payments
-          WHERE status = 'completed'
-            AND paid_at >= date('now')
-        `,
-      )) ?? 0,
-    )
+    const actor = c.get('sessionUser')
+    if (!actor) {
+      return apiError(c, 401, 'unauthorized', 'অনুগ্রহ করে আবার সাইন ইন করুন।')
+    }
 
-    const recentActivities = await dbAll<{
-      id: string
-      actorDisplayName: string
-      actorRoleKey: string | null
-      actionKey: string
-      entityType: string
-      entityId: string
-      note: string | null
-      createdAt: string
-    }>(
-      c.env.DB,
-      `
-        SELECT
-          id,
-          actor_display_name AS actorDisplayName,
-          actor_role_key AS actorRoleKey,
-          action_key AS actionKey,
-          entity_type AS entityType,
-          entity_id AS entityId,
-          note,
-          created_at AS createdAt
-        FROM audit_logs
-        ORDER BY created_at DESC
-        LIMIT 8
-      `,
+    const parsed = analyticsFilterSchema.safeParse(
+      Object.fromEntries(new URL(c.req.url).searchParams),
     )
+    if (!parsed.success) {
+      return apiError(
+        c,
+        400,
+        'dashboard_filter_invalid',
+        'ড্যাশবোর্ড ফিল্টার সঠিক নয়।',
+        parsed.error.flatten(),
+      )
+    }
 
-    const shellSettings = await getShellSettings(c.env.DB, c.env)
-
-    return apiOk(c, {
-      stats: {
-        totalTitles,
-        totalCopies,
-        activeMembers,
-        issuedCopies,
-        overdueCopies,
-        todayCollections,
-      },
-      recentActivities,
-      dashboardWidgets: shellSettings.dashboardWidgets,
-    })
+    try {
+      return apiOk(c, await getStaffDashboard(c.env, actor, parsed.data))
+    } catch (error) {
+      return apiError(
+        c,
+        403,
+        'dashboard_access_denied',
+        error instanceof Error ? error.message : 'ড্যাশবোর্ড দেখা যাচ্ছে না।',
+      )
+    }
   })
+
+  app.post(
+    '/dashboard/export',
+    requirePermission('reports.view'),
+    zValidator('json', analyticsExportSchema),
+    async (c) => {
+      const actor = c.get('sessionUser')
+      if (!actor) {
+        return apiError(c, 401, 'unauthorized', 'অনুগ্রহ করে আবার সাইন ইন করুন।')
+      }
+
+      try {
+        return apiOk(c, {
+          export: await exportStaffDashboard(
+            c.env,
+            actor,
+            c.req.valid('json'),
+            c.get('requestId'),
+          ),
+        })
+      } catch (error) {
+        return apiError(
+          c,
+          400,
+          'dashboard_export_failed',
+          error instanceof Error ? error.message : 'ড্যাশবোর্ড রিপোর্ট এক্সপোর্ট ব্যর্থ হয়েছে।',
+        )
+      }
+    },
+  )
 
   return app
 }

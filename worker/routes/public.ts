@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import {
+  analyticsFilterSchema,
   publicCompetitionRegistrationSchema,
   setupSchema,
   type AppRole,
@@ -24,6 +25,7 @@ import {
   listPublicCompetitions,
   registerPublicCompetition,
 } from '../services/competitions'
+import { getPublicAnalytics, publicAnalyticsEnabled } from '../services/analytics'
 import {
   getPublicBookDetail,
   listPublicCatalog,
@@ -72,6 +74,27 @@ export function createPublicRoutes() {
         online_registration_enabled: featureFlags.online_registration_enabled,
       },
     })
+  })
+
+  app.get('/analytics', async (c) => {
+    if (!(await publicAnalyticsEnabled(c.env.DB))) {
+      return apiError(c, 404, 'analytics_disabled', 'পাবলিক অ্যানালিটিক্স এখন বন্ধ আছে।')
+    }
+
+    const parsed = analyticsFilterSchema.safeParse(
+      Object.fromEntries(new URL(c.req.url).searchParams),
+    )
+    if (!parsed.success) {
+      return apiError(
+        c,
+        400,
+        'analytics_filter_invalid',
+        'অ্যানালিটিক্স ফিল্টার সঠিক নয়।',
+        parsed.error.flatten(),
+      )
+    }
+
+    return apiOk(c, await getPublicAnalytics(c.env, parsed.data))
   })
 
   app.get('/catalog', async (c) => {

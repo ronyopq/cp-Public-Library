@@ -139,10 +139,22 @@ function defaultWidgetConfig(): DashboardWidgetConfigItem[] {
   }))
 }
 
+function mergeKeyedConfig<T extends { key: string; enabled: boolean; order: number }>(
+  defaults: T[],
+  stored?: T[],
+): T[] {
+  const storedMap = new Map((stored ?? []).map((item) => [item.key, item]))
+  return defaults.map((item) => ({
+    ...item,
+    ...(storedMap.get(item.key) ?? {}),
+  }))
+}
+
 function defaultPublicSiteSettings(): PublicSiteSettings {
   return {
     menu: {
       catalog: true,
+      analytics: true,
       competitions: true,
       results: true,
     },
@@ -278,6 +290,9 @@ export async function getShellSettings(
   env: AppBindings,
 ): Promise<ShellSettings> {
   const settings = await getAppSettings(db)
+  const storedMenuConfig = settings.menu_config as MenuConfigItem[] | undefined
+  const storedWidgetConfig =
+    settings.dashboard_widget_config as DashboardWidgetConfigItem[] | undefined
 
   return {
     profile: {
@@ -290,11 +305,8 @@ export async function getShellSettings(
     },
     socialLinks:
       (settings.site_social_links as SocialLink[] | undefined) ?? defaultSocialLinks(),
-    menuConfig:
-      (settings.menu_config as MenuConfigItem[] | undefined) ?? defaultMenuConfig(),
-    dashboardWidgets:
-      (settings.dashboard_widget_config as DashboardWidgetConfigItem[] | undefined) ??
-      defaultWidgetConfig(),
+    menuConfig: mergeKeyedConfig(defaultMenuConfig(), storedMenuConfig),
+    dashboardWidgets: mergeKeyedConfig(defaultWidgetConfig(), storedWidgetConfig),
   }
 }
 
