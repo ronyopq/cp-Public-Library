@@ -23,6 +23,9 @@
 - Added the circulation backend with issue/return/renew flows, barcode-based copy lookup, reservation handling, overdue snapshot refresh, fine assessment/payment recording, and reminder scheduling backed by D1 + Queues + Cron.
 - Added a Bangla-first circulation workspace for quick issue/return, due and overdue loan lists, reservation creation/cancellation, reminder logs, and manager-only policy/reminder settings.
 - Verified `typecheck`, `lint`, `build`, and applied local D1 migration `0005_circulation_and_reminders.sql`.
+- Added accounting schema extensions for fee types, member due periods, payment allocations, richer receipts, report/export metadata, and ledger links via local migration `0006_accounting_and_reports.sql`.
+- Added Bangla-first accounting APIs and UI for dues collection, multi-month payment allocation, member ledgers, receipt reprint, fee-type administration, report filtering, CSV export, HTML print preview, and manager-only payment voiding with audit logs.
+- Verified `typecheck`, `lint`, `build`, `db:migrate:local`, and `db:seed:local` after the accounting implementation.
 
 ## In Progress
 
@@ -31,6 +34,6 @@
 
 ## Next
 
-- Implement copy/item management and deeper accounting/reporting flows on top of the new catalog, member, and circulation foundations.
+- Implement copy/item management and deepen accounting into full statement views, scheduled dues generation, and optional richer spreadsheet/PDF export formats.
 - Build the remaining dashboard widgets, public catalog flows, competition operations, and print pipelines.
 - Add route-level tests and end-to-end auth/RBAC coverage against local D1.

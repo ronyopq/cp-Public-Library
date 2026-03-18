@@ -3,6 +3,7 @@ import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import type { PermissionKey } from '@shared/index'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { AppShell } from '@/app/AppShell'
+import { AccountsPage } from '@/features/accounts/AccountsPage'
 import { useAuth } from '@/providers/useAuth'
 import { AccountPage } from '@/features/account/AccountPage'
 import { LoginPage } from '@/features/auth/LoginPage'
@@ -115,10 +116,9 @@ export default function App() {
             <Route path="circulation" element={<CirculationPage />} />
           </Route>
 
-          <Route
-            path="accounts"
-            element={<PlaceholderPage title="Accounts module" permission="accounts.view" />}
-          />
+          <Route element={<ProtectedRoute permission="accounts.view" />}>
+            <Route path="accounts" element={<AccountsPage />} />
+          </Route>
           <Route
             path="competitions"
             element={<PlaceholderPage title="Competitions module" permission="competitions.manage" />}

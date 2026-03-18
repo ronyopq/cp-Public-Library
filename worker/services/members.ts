@@ -315,31 +315,80 @@ async function loadMemberDuesSummary(
   memberId: string,
 ): Promise<MemberDuesSummary> {
   const row = await dbFirst<{
-    assessedAmount: number | null
-    waivedAmount: number | null
-    paidAmount: number | null
-    outstandingAmount: number | null
+    fineAssessedAmount: number | null
+    fineWaivedAmount: number | null
+    finePaidAmount: number | null
+    fineOutstandingAmount: number | null
+    duesAssessedAmount: number | null
+    duesWaivedAmount: number | null
+    duesPaidAmount: number | null
+    duesOutstandingAmount: number | null
     openFineCount: number | null
   }>(
     db,
     `
       SELECT
-        COALESCE(SUM(assessed_amount), 0) AS assessedAmount,
-        COALESCE(SUM(waived_amount), 0) AS waivedAmount,
-        COALESCE(SUM(paid_amount), 0) AS paidAmount,
-        COALESCE(SUM(assessed_amount - waived_amount - paid_amount), 0) AS outstandingAmount,
-        COALESCE(SUM(CASE WHEN status IN ('open', 'partial') THEN 1 ELSE 0 END), 0) AS openFineCount
-      FROM fines
-      WHERE member_id = ?
+        (
+          SELECT COALESCE(SUM(assessed_amount), 0)
+          FROM fines
+          WHERE fines.member_id = ?
+        ) AS fineAssessedAmount,
+        (
+          SELECT COALESCE(SUM(waived_amount), 0)
+          FROM fines
+          WHERE fines.member_id = ?
+        ) AS fineWaivedAmount,
+        (
+          SELECT COALESCE(SUM(paid_amount), 0)
+          FROM fines
+          WHERE fines.member_id = ?
+        ) AS finePaidAmount,
+        (
+          SELECT COALESCE(SUM(assessed_amount - waived_amount - paid_amount), 0)
+          FROM fines
+          WHERE fines.member_id = ?
+        ) AS fineOutstandingAmount,
+        (
+          SELECT COALESCE(SUM(expected_amount), 0)
+          FROM member_fee_periods
+          WHERE member_fee_periods.member_id = ?
+            AND member_fee_periods.deleted_at IS NULL
+        ) AS duesAssessedAmount,
+        (
+          SELECT COALESCE(SUM(waived_amount), 0)
+          FROM member_fee_periods
+          WHERE member_fee_periods.member_id = ?
+            AND member_fee_periods.deleted_at IS NULL
+        ) AS duesWaivedAmount,
+        (
+          SELECT COALESCE(SUM(paid_amount), 0)
+          FROM member_fee_periods
+          WHERE member_fee_periods.member_id = ?
+            AND member_fee_periods.deleted_at IS NULL
+        ) AS duesPaidAmount,
+        (
+          SELECT COALESCE(SUM(expected_amount - waived_amount - paid_amount), 0)
+          FROM member_fee_periods
+          WHERE member_fee_periods.member_id = ?
+            AND member_fee_periods.deleted_at IS NULL
+        ) AS duesOutstandingAmount,
+        (
+          SELECT COALESCE(SUM(CASE WHEN status IN ('open', 'partial') THEN 1 ELSE 0 END), 0)
+          FROM fines
+          WHERE fines.member_id = ?
+        ) AS openFineCount
     `,
-    [memberId],
+    [memberId, memberId, memberId, memberId, memberId, memberId, memberId, memberId, memberId],
   )
 
   return {
-    assessedAmount: Number(row?.assessedAmount ?? 0),
-    waivedAmount: Number(row?.waivedAmount ?? 0),
-    paidAmount: Number(row?.paidAmount ?? 0),
-    outstandingAmount: Number(row?.outstandingAmount ?? 0),
+    assessedAmount:
+      Number(row?.fineAssessedAmount ?? 0) + Number(row?.duesAssessedAmount ?? 0),
+    waivedAmount:
+      Number(row?.fineWaivedAmount ?? 0) + Number(row?.duesWaivedAmount ?? 0),
+    paidAmount: Number(row?.finePaidAmount ?? 0) + Number(row?.duesPaidAmount ?? 0),
+    outstandingAmount:
+      Number(row?.fineOutstandingAmount ?? 0) + Number(row?.duesOutstandingAmount ?? 0),
     openFineCount: Number(row?.openFineCount ?? 0),
   }
 }

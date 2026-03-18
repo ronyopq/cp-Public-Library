@@ -10,7 +10,7 @@ function getExtension(fileName: string, fallback = 'bin'): string {
 }
 
 export function buildR2Key(
-  kind: 'branding' | 'covers' | 'members' | 'scans' | 'receipts' | 'exports',
+  kind: 'branding' | 'covers' | 'members' | 'scans' | 'receipts' | 'exports' | 'reports',
   fileName: string,
 ): string {
   const dateFolder = new Date().toISOString().slice(0, 10)

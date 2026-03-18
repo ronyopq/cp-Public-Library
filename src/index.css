@@ -876,6 +876,45 @@ img {
   gap: 1rem;
 }
 
+.split-grid--accounts {
+  grid-template-columns: 1.05fr 0.95fr;
+}
+
+.month-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.month-option {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.month-option.is-selected {
+  border-color: rgba(13, 59, 102, 0.36);
+  box-shadow: 0 0 0 3px rgba(13, 59, 102, 0.08);
+}
+
+.month-option input {
+  margin-top: 0.15rem;
+}
+
+.report-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
 .lookup-list {
   display: grid;
   gap: 0.5rem;
@@ -945,7 +984,8 @@ img {
   .intake-status-grid,
   .duplicate-action-grid,
   .duplicate-grid,
-  .member-summary-grid {
+  .member-summary-grid,
+  .month-selection-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -992,7 +1032,8 @@ img {
   .duplicate-action-grid,
   .duplicate-grid,
   .member-summary-grid,
-  .member-identity-grid {
+  .member-identity-grid,
+  .month-selection-grid {
     grid-template-columns: 1fr;
   }
 

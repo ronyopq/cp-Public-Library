@@ -28,3 +28,9 @@
 - Overdue fines are calculated by calendar day in `Asia/Dhaka`, honoring configurable grace days and a maximum fine cap stored in D1-backed application settings.
 - Reservations operate at the bibliographic-record level rather than locking a specific copy up front; when an available copy exists, the first reservation is immediately marked `ready` and the copy is held as `reserved`.
 - Reminder delivery uses provider stubs (`whatsapp_stub`, `sms_stub`, `email_stub`) in the first release, but the queue/cron workflow, templates, rules, retry tracking, and provider abstraction are designed so real channel integrations can replace the stubs without schema changes.
+- Accounting now separates payment methods (`payment_types`) from configurable fee types (`fee_types`); the former controls how money is received, while the latter controls what the payment is for.
+- Monthly dues are materialized into `member_fee_periods` on demand when staff opens a member ledger, dashboard, or report, so existing members gain a ledger-ready due schedule without a separate backfill job.
+- Receipt and report “PDF” support is HTML-first in the current Cloudflare-native release: printable HTML assets are stored in R2 (`receipts/` and `reports/`) and are intended to be printed to PDF from the browser when needed.
+- Excel export is implemented as UTF-8 CSV so it opens cleanly in Excel-compatible tools without introducing a heavyweight spreadsheet generation dependency into the Worker.
+- Current ledger posting recognizes cash/bank/mobile-wallet movements and the matching income account per fee type; member due schedules remain the operational source of receivable/outstanding state until a fuller double-entry receivable workflow is added.
+- Manager and above can void previously recorded payments with audit logging; “delete” for sensitive accounting records is modeled as a reversible void/refund state instead of hard deletion.

@@ -86,6 +86,28 @@ app.get('/files/*', async (c) => {
     }
   }
 
+  if (key.startsWith('receipts/')) {
+    const user = c.get('sessionUser')
+    if (
+      !user ||
+      (!user.permissions.includes('accounts.view') &&
+        !user.permissions.includes('accounts.manage'))
+    ) {
+      return apiError(c, 403, 'insufficient_permission', 'You cannot view this receipt file.')
+    }
+  }
+
+  if (key.startsWith('reports/')) {
+    const user = c.get('sessionUser')
+    if (
+      !user ||
+      (!user.permissions.includes('reports.view') &&
+        !user.permissions.includes('exports.manage'))
+    ) {
+      return apiError(c, 403, 'insufficient_permission', 'You cannot view this report file.')
+    }
+  }
+
   return serveFile(c.env.MEDIA_BUCKET, key)
 })
 

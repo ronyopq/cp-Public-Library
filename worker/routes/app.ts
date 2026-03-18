@@ -4,6 +4,7 @@ import { dbAll, dbValue } from '../lib/db'
 import { apiOk } from '../lib/http'
 import { getShellSettings } from '../lib/settings'
 import type { AppEnv } from '../types'
+import { createAccountRoutes } from './accounts'
 import { createCatalogRoutes } from './catalog'
 import { createCirculationRoutes } from './circulation'
 import { createMemberRoutes } from './members'
@@ -12,6 +13,7 @@ export function createAppRoutes() {
   const app = new Hono<AppEnv>()
 
   app.use('*', requireAuth())
+  app.route('/accounts', createAccountRoutes())
   app.route('/catalog', createCatalogRoutes())
   app.route('/circulation', createCirculationRoutes())
   app.route('/members', createMemberRoutes())

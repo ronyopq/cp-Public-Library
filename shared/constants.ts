@@ -91,6 +91,33 @@ export const FEE_TYPE_CODES = [
   'other',
 ] as const
 
+export const ACCOUNTING_FEE_CODES = [
+  'monthly_subscription',
+  'donation',
+  'fine',
+  'exam_fee',
+  'competition_fee',
+  'book_rental_fee',
+  'other_fee',
+] as const
+
+export const ACCOUNTING_COLLECTION_MODES = ['monthly', 'one_time'] as const
+
+export const MEMBER_DUE_STATUSES = [
+  'open',
+  'partial',
+  'paid',
+  'waived',
+  'cancelled',
+] as const
+
+export const ACCOUNTING_REPORT_PRESETS = [
+  'daily',
+  'monthly',
+  'yearly',
+  'custom',
+] as const
+
 export const FEATURE_FLAG_KEYS = [
   'public_catalog_enabled',
   'competitions_module_enabled',

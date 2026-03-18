@@ -133,9 +133,28 @@ INSERT OR IGNORE INTO payment_types (id, payment_type_code, name_bn, name_en, re
 INSERT OR IGNORE INTO accounts (id, account_code, account_name_bn, account_name_en, account_type, owner_type, owner_id, active) VALUES
   ('acct_cash', '1000-CASH', 'ক্যাশ ইন হ্যান্ড', 'Cash in hand', 'asset', NULL, NULL, 1),
   ('acct_wallet', '1010-WALLET', 'মোবাইল ওয়ালেট', 'Mobile wallet clearing', 'asset', NULL, NULL, 1),
+  ('acct_bank', '1020-BANK', 'ব্যাংক ক্লিয়ারিং', 'Bank clearing', 'asset', NULL, NULL, 1),
   ('acct_receivable', '1200-RECEIVABLE', 'সদস্য পাওনা', 'Member receivable', 'receivable', NULL, NULL, 1),
   ('acct_membership_income', '4000-MEMBERSHIP', 'সদস্য ফি আয়', 'Membership income', 'income', NULL, NULL, 1),
-  ('acct_fine_income', '4010-FINES', 'জরিমানা আয়', 'Fine income', 'income', NULL, NULL, 1);
+  ('acct_fine_income', '4010-FINES', 'জরিমানা আয়', 'Fine income', 'income', NULL, NULL, 1),
+  ('acct_donation_income', '4020-DONATION', 'দান আয়', 'Donation income', 'income', NULL, NULL, 1),
+  ('acct_exam_income', '4030-EXAM', 'পরীক্ষা ফি আয়', 'Exam fee income', 'income', NULL, NULL, 1),
+  ('acct_competition_income', '4040-COMPETITION', 'প্রতিযোগিতা ফি আয়', 'Competition fee income', 'income', NULL, NULL, 1),
+  ('acct_rental_income', '4050-RENTAL', 'বই ভাড়া আয়', 'Book rental income', 'income', NULL, NULL, 1),
+  ('acct_other_income', '4060-OTHER', 'অন্যান্য আয়', 'Other income', 'income', NULL, NULL, 1);
+
+INSERT OR IGNORE INTO fee_types (
+  id, fee_code, base_code, name_bn, name_en, description_bn, description_en,
+  collection_mode, default_amount, allow_custom_amount, allow_multi_month,
+  income_account_id, active, is_system, sort_order
+) VALUES
+  ('fee_monthly_subscription', 'monthly_subscription', 'monthly_subscription', 'মাসিক সাবস্ক্রিপশন', 'Monthly subscription', 'মাসভিত্তিক সদস্য চাঁদা ও সাবস্ক্রিপশন আদায়', 'Recurring monthly membership dues', 'monthly', 100, 1, 1, 'acct_membership_income', 1, 1, 10),
+  ('fee_donation', 'donation', 'donation', 'দান', 'Donation', 'স্বেচ্ছা অনুদান', 'Voluntary donation', 'one_time', 0, 1, 0, 'acct_donation_income', 1, 1, 20),
+  ('fee_fine', 'fine', 'fine', 'জরিমানা', 'Fine', 'জরিমানা আদায়', 'Fine collection', 'one_time', 0, 1, 0, 'acct_fine_income', 1, 1, 30),
+  ('fee_exam', 'exam_fee', 'exam_fee', 'পরীক্ষা ফি', 'Exam fee', 'পরীক্ষা বা মূল্যায়ন সংক্রান্ত ফি', 'Exam or assessment fee', 'one_time', 0, 1, 0, 'acct_exam_income', 1, 1, 40),
+  ('fee_competition', 'competition_fee', 'competition_fee', 'প্রতিযোগিতা ফি', 'Competition fee', 'প্রতিযোগিতা নিবন্ধন বা অংশগ্রহণ ফি', 'Competition registration fee', 'one_time', 0, 1, 0, 'acct_competition_income', 1, 1, 50),
+  ('fee_book_rental', 'book_rental_fee', 'book_rental_fee', 'বই ভাড়া ফি', 'Book rental fee', 'স্বল্পমেয়াদি ভাড়া বা ব্যবহার ফি', 'Book rental fee', 'one_time', 0, 1, 0, 'acct_rental_income', 1, 1, 60),
+  ('fee_other', 'other_fee', 'other_fee', 'অন্যান্য ফি', 'Other fee', 'অন্যান্য প্রশাসনিক বা সেবা ফি', 'Other administrative fee', 'one_time', 0, 1, 0, 'acct_other_income', 1, 1, 70);
 
 INSERT OR IGNORE INTO languages (id, iso_code, name_bn, name_en, script_name, active) VALUES
   ('lang_bn', 'bn', 'বাংলা', 'Bangla', 'Bengali', 1),
