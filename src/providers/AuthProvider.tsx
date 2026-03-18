@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type {
   FeatureFlags,
+  PublicSiteSettings,
   SiteMetadataSettings,
   SiteProfileSettings,
   SocialLink,
@@ -26,6 +27,7 @@ interface SiteConfigPayload {
   profile: SiteProfileSettings
   metadata: SiteMetadataSettings
   socialLinks: SocialLink[]
+  publicSettings: PublicSiteSettings
 }
 
 function applyDocumentBranding(
@@ -51,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [featureFlags, setFeatureFlags] = useState<FeatureFlags | null>(null)
   const [profile, setProfile] = useState<SiteProfileSettings | null>(null)
   const [metadata, setMetadata] = useState<SiteMetadataSettings | null>(null)
+  const [publicSettings, setPublicSettings] = useState<PublicSiteSettings | null>(null)
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([])
   const [error, setError] = useState<string | null>(null)
 
@@ -70,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setFeatureFlags(session.featureFlags)
       setProfile(session.profile ?? siteConfig.profile)
       setMetadata(session.metadata ?? siteConfig.metadata)
+      setPublicSettings(siteConfig.publicSettings)
       setSocialLinks(siteConfig.socialLinks)
     } catch (requestError) {
       setError(errorMessage(requestError))
@@ -82,10 +86,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null)
     const result = await apiPost<SessionPayload>('/api/auth/login', payload)
     setUser(result.user)
-    setFeatureFlags(result.featureFlags)
-    setProfile(result.profile)
-    setMetadata(result.metadata)
-    setBootstrapRequired(false)
+      setFeatureFlags(result.featureFlags)
+      setProfile(result.profile)
+      setMetadata(result.metadata)
+      setBootstrapRequired(false)
   }
 
   async function logout() {
@@ -111,6 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         featureFlags,
         profile,
         metadata,
+        publicSettings,
         socialLinks,
         error,
         refreshSession,

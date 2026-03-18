@@ -9,7 +9,16 @@ import { AccountPage } from '@/features/account/AccountPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { SetupPage } from '@/features/auth/SetupPage'
 import { BookIntakePage } from '@/features/catalog/BookIntakePage'
+import { CompetitionsPage } from '@/features/competitions/CompetitionsPage'
 import { PlaceholderPage } from '@/features/common/PlaceholderPage'
+import { CompetitionAcknowledgementPage } from '@/features/public/CompetitionAcknowledgementPage'
+import { PublicBookPage } from '@/features/public/PublicBookPage'
+import { PublicCatalogPage } from '@/features/public/PublicCatalogPage'
+import { PublicCompetitionDetailPage } from '@/features/public/PublicCompetitionDetailPage'
+import { PublicCompetitionResultsPage } from '@/features/public/PublicCompetitionResultsPage'
+import { PublicCompetitionsPage } from '@/features/public/PublicCompetitionsPage'
+import { PublicLayout } from '@/features/public/PublicLayout'
+import { PublicQrPage } from '@/features/public/PublicQrPage'
 import { CirculationPage } from '@/features/circulation/CirculationPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { MembersPage } from '@/features/members/MembersPage'
@@ -62,8 +71,22 @@ function PublicRoute({ children }: { children: ReactElement }) {
   return children
 }
 
+function PublicSiteRoute() {
+  const { loading, bootstrapRequired } = useAuth()
+
+  if (loading) {
+    return <LoadingState />
+  }
+
+  if (bootstrapRequired) {
+    return <Navigate to="/setup" replace />
+  }
+
+  return <Outlet />
+}
+
 function RootRedirect() {
-  const { loading, bootstrapRequired, user } = useAuth()
+  const { loading, bootstrapRequired, featureFlags, publicSettings, user } = useAuth()
 
   if (loading) {
     return <LoadingState />
@@ -75,6 +98,17 @@ function RootRedirect() {
 
   if (user) {
     return <Navigate to="/app" replace />
+  }
+
+  if (featureFlags?.public_catalog_enabled && publicSettings?.menu.catalog !== false) {
+    return <Navigate to="/catalog" replace />
+  }
+
+  if (
+    featureFlags?.competitions_module_enabled &&
+    publicSettings?.menu.competitions !== false
+  ) {
+    return <Navigate to="/competitions" replace />
   }
 
   return <Navigate to="/login" replace />
@@ -100,6 +134,22 @@ export default function App() {
         }
       />
 
+      <Route element={<PublicSiteRoute />}>
+        <Route element={<PublicLayout />}>
+          <Route path="/catalog" element={<PublicCatalogPage />} />
+          <Route path="/books/:recordId/:slug" element={<PublicBookPage />} />
+          <Route path="/qr/:shortCode" element={<PublicQrPage />} />
+          <Route path="/competitions" element={<PublicCompetitionsPage />} />
+          <Route path="/competitions/results" element={<PublicCompetitionResultsPage />} />
+          <Route path="/competitions/:slug" element={<PublicCompetitionDetailPage />} />
+          <Route path="/competitions/:slug/results" element={<PublicCompetitionDetailPage />} />
+          <Route
+            path="/competitions/acknowledgements/:registrationId"
+            element={<CompetitionAcknowledgementPage />}
+          />
+        </Route>
+      </Route>
+
       <Route element={<ProtectedRoute />}>
         <Route path="/app" element={<AppShell />}>
           <Route index element={<DashboardPage />} />
@@ -119,10 +169,9 @@ export default function App() {
           <Route element={<ProtectedRoute permission="accounts.view" />}>
             <Route path="accounts" element={<AccountsPage />} />
           </Route>
-          <Route
-            path="competitions"
-            element={<PlaceholderPage title="Competitions module" permission="competitions.manage" />}
-          />
+          <Route element={<ProtectedRoute permission="competitions.manage" />}>
+            <Route path="competitions" element={<CompetitionsPage />} />
+          </Route>
           <Route
             path="printing"
             element={<PlaceholderPage title="Print center" permission="prints.manage" />}

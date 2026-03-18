@@ -10,7 +10,13 @@ import type {
   IntakeAsset,
   SessionUser,
 } from '@shared/index'
-import { dhakaNow, normalizeText, similarityScore, toSlug } from '@shared/utils'
+import {
+  buildPublicBookPath,
+  dhakaNow,
+  normalizeText,
+  similarityScore,
+  toSlug,
+} from '@shared/utils'
 import type { AppBindings } from '../types'
 import { writeAudit } from '../lib/audit'
 import {
@@ -1360,16 +1366,20 @@ async function createCopiesForRecord(
           created_at,
           updated_at
         )
-        VALUES (?, 'book_copy', ?, ?, 'internal', ?, ?, 1, ?, ?)
+        VALUES (?, 'book_copy', ?, ?, 'public', ?, ?, 1, ?, ?)
       `,
       [
         crypto.randomUUID(),
         copyId,
         qrShortCode,
-        `/app/books?record=${record.id}&copy=${copyId}`,
+        `/qr/${qrShortCode}`,
         JSON.stringify({
           recordId: record.id,
           copyId,
+          destinationPath: buildPublicBookPath(
+            record.id,
+            record.titleBn || record.titleEn || 'book',
+          ),
         }),
         dhakaNow(),
         dhakaNow(),

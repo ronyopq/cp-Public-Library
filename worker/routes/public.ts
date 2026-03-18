@@ -1,6 +1,10 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { setupSchema, type AppRole } from '@shared/index'
+import {
+  publicCompetitionRegistrationSchema,
+  setupSchema,
+  type AppRole,
+} from '@shared/index'
 import { dhakaNow } from '@shared/utils'
 import type { AppEnv } from '../types'
 import { createSession } from '../lib/auth'
@@ -8,7 +12,24 @@ import { writeAudit } from '../lib/audit'
 import { dbFirst, dbValue } from '../lib/db'
 import { apiError, apiOk } from '../lib/http'
 import { hashPassword } from '../lib/password'
-import { getFeatureFlags, getShellSettings, saveShellSettings } from '../lib/settings'
+import {
+  getFeatureFlags,
+  getPublicSiteSettings,
+  getShellSettings,
+  saveShellSettings,
+} from '../lib/settings'
+import {
+  getCompetitionAcknowledgement,
+  getPublicCompetitionDetail,
+  listPublicCompetitions,
+  registerPublicCompetition,
+} from '../services/competitions'
+import {
+  getPublicBookDetail,
+  listPublicCatalog,
+  parsePublicCatalogQuery,
+  resolvePublicQr,
+} from '../services/public'
 
 export function createPublicRoutes() {
   const app = new Hono<AppEnv>()
@@ -38,11 +59,13 @@ export function createPublicRoutes() {
   app.get('/site-config', async (c) => {
     const featureFlags = await getFeatureFlags(c.env)
     const shellSettings = await getShellSettings(c.env.DB, c.env)
+    const publicSettings = await getPublicSiteSettings(c.env.DB)
 
     return apiOk(c, {
       profile: shellSettings.profile,
       metadata: shellSettings.metadata,
       socialLinks: shellSettings.socialLinks,
+      publicSettings,
       featureFlags: {
         public_catalog_enabled: featureFlags.public_catalog_enabled,
         competitions_module_enabled: featureFlags.competitions_module_enabled,
@@ -50,6 +73,108 @@ export function createPublicRoutes() {
       },
     })
   })
+
+  app.get('/catalog', async (c) => {
+    const featureFlags = c.get('featureFlags')
+    if (!featureFlags.public_catalog_enabled) {
+      return apiError(c, 404, 'catalog_disabled', 'পাবলিক ক্যাটালগ এখন বন্ধ আছে।')
+    }
+
+    return apiOk(c, await listPublicCatalog(c.env, parsePublicCatalogQuery(new URL(c.req.url).searchParams)))
+  })
+
+  app.get('/catalog/:recordId', async (c) => {
+    const featureFlags = c.get('featureFlags')
+    if (!featureFlags.public_catalog_enabled) {
+      return apiError(c, 404, 'catalog_disabled', 'পাবলিক ক্যাটালগ এখন বন্ধ আছে।')
+    }
+
+    const detail = await getPublicBookDetail(c.env, c.req.param('recordId'))
+    if (!detail) {
+      return apiError(c, 404, 'book_not_found', 'পাবলিক বইয়ের পাতা পাওয়া যায়নি।')
+    }
+
+    return apiOk(c, detail)
+  })
+
+  app.get('/qr/:shortCode', async (c) => {
+    const resolution = await resolvePublicQr(c.env.DB, c.req.param('shortCode'))
+    if (!resolution) {
+      return apiError(c, 404, 'qr_not_found', 'এই QR লিংকটি পাওয়া যায়নি।')
+    }
+
+    return apiOk(c, resolution)
+  })
+
+  app.get('/competition-acknowledgements/:registrationId', async (c) => {
+    const featureFlags = c.get('featureFlags')
+    if (!featureFlags.competitions_module_enabled) {
+      return apiError(c, 404, 'competitions_disabled', 'প্রতিযোগিতা মডিউল এখন বন্ধ আছে।')
+    }
+
+    const acknowledgement = await getCompetitionAcknowledgement(
+      c.env.DB,
+      c.req.param('registrationId'),
+    )
+    if (!acknowledgement) {
+      return apiError(c, 404, 'acknowledgement_not_found', 'নিবন্ধনের রসিদ পাওয়া যায়নি।')
+    }
+
+    return apiOk(c, { acknowledgement })
+  })
+
+  app.get('/competitions', async (c) => {
+    const featureFlags = c.get('featureFlags')
+    if (!featureFlags.competitions_module_enabled) {
+      return apiOk(c, { items: [] as never[] })
+    }
+
+    return apiOk(c, {
+      items: await listPublicCompetitions(c.env.DB),
+    })
+  })
+
+  app.get('/competitions/:slug', async (c) => {
+    const featureFlags = c.get('featureFlags')
+    if (!featureFlags.competitions_module_enabled) {
+      return apiError(c, 404, 'competitions_disabled', 'প্রতিযোগিতা মডিউল এখন বন্ধ আছে।')
+    }
+
+    const detail = await getPublicCompetitionDetail(c.env.DB, c.req.param('slug'))
+    if (!detail) {
+      return apiError(c, 404, 'competition_not_found', 'প্রতিযোগিতার তথ্য পাওয়া যায়নি।')
+    }
+
+    return apiOk(c, { detail })
+  })
+
+  app.post(
+    '/competitions/:slug/register',
+    zValidator('json', publicCompetitionRegistrationSchema),
+    async (c) => {
+      const featureFlags = c.get('featureFlags')
+      if (!featureFlags.competitions_module_enabled || !featureFlags.online_registration_enabled) {
+        return apiError(c, 403, 'registration_disabled', 'অনলাইন নিবন্ধন এখন বন্ধ আছে।')
+      }
+
+      const payload = c.req.valid('json')
+      const acknowledgement = await registerPublicCompetition(
+        c.env,
+        {
+          competitionSlug: c.req.param('slug'),
+          participantName: payload.participantName,
+          guardianName: payload.guardianName || undefined,
+          phone: payload.phone,
+          email: payload.email || undefined,
+          category: payload.category || undefined,
+          note: payload.note || undefined,
+        },
+        c.get('requestId'),
+      )
+
+      return apiOk(c, { acknowledgement }, 201)
+    },
+  )
 
   app.post('/setup/bootstrap', zValidator('json', setupSchema), async (c) => {
     const existingUser = await dbFirst<{ id: string }>(

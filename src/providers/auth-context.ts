@@ -1,6 +1,7 @@
 import { createContext } from 'react'
 import type {
   FeatureFlags,
+  PublicSiteSettings,
   SessionUser,
   SiteMetadataSettings,
   SiteProfileSettings,
@@ -14,6 +15,7 @@ export interface AuthContextValue {
   featureFlags: FeatureFlags | null
   profile: SiteProfileSettings | null
   metadata: SiteMetadataSettings | null
+  publicSettings: PublicSiteSettings | null
   socialLinks: SocialLink[]
   error: string | null
   refreshSession: () => Promise<void>

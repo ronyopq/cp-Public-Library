@@ -37,6 +37,19 @@ export function toSlug(input: string): string {
   return normalizeText(input).replace(/\s+/g, '-')
 }
 
+export function buildPublicBookPath(id: string, title: string): string {
+  const slug = toSlug(title || 'book') || 'book'
+  return `/books/${encodeURIComponent(id)}/${slug}`
+}
+
+export function buildPublicCompetitionPath(slug: string): string {
+  return `/competitions/${encodeURIComponent(slug)}`
+}
+
+export function buildPublicCompetitionResultsPath(slug: string): string {
+  return `${buildPublicCompetitionPath(slug)}/results`
+}
+
 export function toBanglaCurrency(amount: number): string {
   return new Intl.NumberFormat('bn-BD', {
     style: 'currency',

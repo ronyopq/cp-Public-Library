@@ -6,6 +6,7 @@ import { getShellSettings } from '../lib/settings'
 import type { AppEnv } from '../types'
 import { createAccountRoutes } from './accounts'
 import { createCatalogRoutes } from './catalog'
+import { createCompetitionRoutes } from './competitions'
 import { createCirculationRoutes } from './circulation'
 import { createMemberRoutes } from './members'
 
@@ -15,6 +16,7 @@ export function createAppRoutes() {
   app.use('*', requireAuth())
   app.route('/accounts', createAccountRoutes())
   app.route('/catalog', createCatalogRoutes())
+  app.route('/competitions', createCompetitionRoutes())
   app.route('/circulation', createCirculationRoutes())
   app.route('/members', createMemberRoutes())
 

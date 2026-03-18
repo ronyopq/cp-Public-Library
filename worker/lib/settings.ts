@@ -2,6 +2,7 @@ import type {
   DashboardWidgetConfigItem,
   FeatureFlags,
   MenuConfigItem,
+  PublicSiteSettings,
   ShellSettings,
   SiteMetadataSettings,
   SiteProfileSettings,
@@ -138,6 +139,35 @@ function defaultWidgetConfig(): DashboardWidgetConfigItem[] {
   }))
 }
 
+function defaultPublicSiteSettings(): PublicSiteSettings {
+  return {
+    menu: {
+      catalog: true,
+      competitions: true,
+      results: true,
+    },
+    catalogFields: {
+      subtitle: true,
+      authors: true,
+      publisher: true,
+      language: true,
+      publicationYear: true,
+      edition: true,
+      pageCount: true,
+      category: true,
+      summary: true,
+      tags: true,
+      availability: true,
+      cover: true,
+    },
+    competition: {
+      resultsVisible: true,
+      printableAcknowledgement: true,
+      showFeeNotice: true,
+    },
+  }
+}
+
 export async function getFeatureFlags(env: AppBindings): Promise<FeatureFlags> {
   const cached = await env.APP_CACHE.get(featureFlagsCacheKey, 'json')
   if (cached) {
@@ -268,6 +298,30 @@ export async function getShellSettings(
   }
 }
 
+export async function getPublicSiteSettings(db: D1Database): Promise<PublicSiteSettings> {
+  const settings = await getAppSettings(db)
+
+  return {
+    ...defaultPublicSiteSettings(),
+    ...(settings.public_site_settings as Partial<PublicSiteSettings> | undefined),
+    menu: {
+      ...defaultPublicSiteSettings().menu,
+      ...((settings.public_site_settings as Partial<PublicSiteSettings> | undefined)?.menu ??
+        {}),
+    },
+    catalogFields: {
+      ...defaultPublicSiteSettings().catalogFields,
+      ...((settings.public_site_settings as Partial<PublicSiteSettings> | undefined)
+        ?.catalogFields ?? {}),
+    },
+    competition: {
+      ...defaultPublicSiteSettings().competition,
+      ...((settings.public_site_settings as Partial<PublicSiteSettings> | undefined)
+        ?.competition ?? {}),
+    },
+  }
+}
+
 export async function saveShellSettings(
   db: D1Database,
   actorId: string | null,
@@ -280,4 +334,12 @@ export async function saveShellSettings(
     saveAppSetting(db, 'menu_config', settings.menuConfig, actorId),
     saveAppSetting(db, 'dashboard_widget_config', settings.dashboardWidgets, actorId),
   ])
+}
+
+export async function savePublicSiteSettings(
+  db: D1Database,
+  actorId: string | null,
+  settings: PublicSiteSettings,
+) {
+  await saveAppSetting(db, 'public_site_settings', settings, actorId)
 }

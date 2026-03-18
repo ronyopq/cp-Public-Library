@@ -957,6 +957,246 @@ img {
   color: #8f4d10;
 }
 
+.public-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.public-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 1rem 1rem 0;
+}
+
+.public-header__bar,
+.public-nav,
+.public-footer {
+  width: min(1180px, calc(100vw - 2rem));
+  margin: 0 auto;
+}
+
+.public-header__bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 1.4rem;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow);
+}
+
+.public-brand {
+  min-width: 0;
+}
+
+.public-header__actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.public-nav {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 0.4rem 0;
+}
+
+.public-nav__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  color: var(--text-soft);
+}
+
+.public-nav__link.is-active,
+.public-nav__link:hover {
+  background: rgba(13, 59, 102, 0.08);
+  color: var(--primary);
+}
+
+.public-main {
+  width: min(1180px, calc(100vw - 2rem));
+  margin: 0 auto;
+  padding: 1.25rem 0 2rem;
+}
+
+.public-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 0 2rem;
+  color: var(--text-soft);
+}
+
+.public-footer__links {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.public-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 1rem;
+  padding: 1.4rem;
+  border-radius: 1.6rem;
+  border: 1px solid rgba(13, 59, 102, 0.14);
+  background:
+    radial-gradient(circle at top right, rgba(244, 211, 94, 0.28), transparent 30%),
+    linear-gradient(135deg, rgba(13, 59, 102, 0.98), rgba(24, 86, 126, 0.94));
+  color: white;
+  box-shadow: var(--shadow);
+}
+
+.public-hero h1 {
+  margin: 0.3rem 0 0.5rem;
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+}
+
+.public-hero p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.public-hero__eyebrow {
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(244, 211, 94, 0.92);
+}
+
+.public-hero__stats {
+  display: grid;
+  gap: 1rem;
+}
+
+.public-catalog-layout {
+  display: grid;
+  grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.public-filters {
+  position: sticky;
+  top: 7rem;
+  align-self: start;
+}
+
+.public-book-grid,
+.public-competition-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.public-book-card,
+.public-competition-card {
+  display: grid;
+  gap: 0;
+  border-radius: 1.4rem;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.public-book-card:hover,
+.public-competition-card:hover {
+  transform: translateY(-2px);
+}
+
+.public-book-card__cover {
+  aspect-ratio: 0.78;
+  background:
+    linear-gradient(180deg, rgba(13, 59, 102, 0.06), rgba(244, 211, 94, 0.08)),
+    white;
+  overflow: hidden;
+}
+
+.public-book-card__cover img,
+.public-book-detail__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.public-book-card__placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(160deg, rgba(13, 59, 102, 0.9), rgba(31, 79, 119, 0.9));
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 700;
+}
+
+.public-book-card__placeholder.is-large {
+  min-height: 22rem;
+  border-radius: 1.4rem;
+}
+
+.public-book-card__body {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.public-book-card__body h2,
+.public-book-card__body h3,
+.public-competition-card h2 {
+  margin: 0;
+}
+
+.public-book-card__badges,
+.public-book-card__meta,
+.public-competition-card__meta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.public-book-card__meta span,
+.public-competition-card__meta span {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(13, 59, 102, 0.08);
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}
+
+.public-book-detail {
+  display: grid;
+  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+.public-book-detail__cover {
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.7);
+  min-height: 24rem;
+}
+
+.public-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.acknowledgement-card {
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
 .auth-metric-grid {
   display: grid;
   gap: 1rem;
@@ -985,12 +1225,25 @@ img {
   .duplicate-action-grid,
   .duplicate-grid,
   .member-summary-grid,
-  .month-selection-grid {
+  .month-selection-grid,
+  .public-book-grid,
+  .public-competition-grid,
+  .public-detail-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .cover-editor {
     grid-template-columns: 1fr;
+  }
+
+  .public-catalog-layout,
+  .public-book-detail,
+  .public-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .public-filters {
+    position: static;
   }
 }
 
@@ -1020,6 +1273,19 @@ img {
   .menu-toggle {
     display: inline-flex;
   }
+
+  .public-nav {
+    display: none;
+  }
+
+  .public-nav.is-open {
+    display: flex;
+    padding-top: 0.75rem;
+  }
+
+  .public-footer {
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1033,17 +1299,35 @@ img {
   .duplicate-grid,
   .member-summary-grid,
   .member-identity-grid,
-  .month-selection-grid {
+  .month-selection-grid,
+  .public-book-grid,
+  .public-competition-grid,
+  .public-detail-grid {
     grid-template-columns: 1fr;
   }
 
   .shell-main,
   .auth-page__hero,
-  .auth-page__content {
+  .auth-page__content,
+  .public-main {
     padding: 1rem;
   }
 
   .data-table {
     min-width: 36rem;
+  }
+
+  .public-header {
+    padding: 0.75rem 0.75rem 0;
+  }
+
+  .public-header__bar,
+  .public-nav,
+  .public-footer {
+    width: calc(100vw - 1.5rem);
+  }
+
+  .public-header__bar {
+    padding: 0.9rem 1rem;
   }
 }
