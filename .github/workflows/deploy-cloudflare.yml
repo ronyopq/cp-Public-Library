@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Workers
+name: Deploy to Cloudflare Pages
 
 on:
   push:
@@ -36,15 +36,15 @@ jobs:
       - name: Build Vite app
         run: npm run build
 
-      - name: Deploy to Cloudflare Workers
-        run: npx wrangler deploy --tsconfig tsconfig.worker.json
+      - name: Deploy to Cloudflare Pages
+        run: npx wrangler pages deploy dist --project-name cppl-site
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Post Deployment Info
-        if: always()
+      - name: Post Deployment
+        if: success()
         run: |
-          echo "✅ Deployed to Cloudflare!"
-          echo "🌐 Visit: https://cppl.pages.dev/"
-          echo "📝 Worker: cx-public-library"
+          echo "✅ Successfully deployed to Cloudflare Pages!"
+          echo "🌐 Website: https://cppl-site.pages.dev/"
+          echo "📚 Repository: https://github.com/ronyopq/cp-Public-Library"

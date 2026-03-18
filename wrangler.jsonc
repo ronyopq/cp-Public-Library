@@ -4,12 +4,13 @@
   "main": "worker/index.ts",
   "compatibility_date": "2026-03-17",
   "compatibility_flags": ["nodejs_compat"],
+  "pages_build_output_dir": "dist",
   "observability": {
     "enabled": true
   },
   "assets": {
     "directory": "./dist",
-    "binding": "ASSETS",
+    "binding": "STATIC_FILES",
     "not_found_handling": "single-page-application",
     "run_worker_first": [
       "/api/*",
