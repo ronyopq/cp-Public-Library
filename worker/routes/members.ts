@@ -20,6 +20,7 @@ import {
   listArchivedMembers,
   listMemberCardTemplates,
   listMembers,
+  restoreMember,
   updateMember,
   uploadMemberPhoto,
 } from '../services/members'
@@ -123,6 +124,7 @@ export function createMemberRoutes() {
       fileValue,
       ['image/jpeg', 'image/png', 'image/webp'],
       5 * 1024 * 1024,
+      { allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'] },
     )
     if (validationError) {
       return fileErrorResponse(c, validationError)
@@ -138,11 +140,6 @@ export function createMemberRoutes() {
     }
 
     const rateLimitFailure = await assertRateLimit(c, 'member-create', 25, 300)
-    if (rateLimitFailure) {
-      return rateLimitFailure
-    }
-
-    const rateLimitFailure = await assertRateLimit(c, 'member-update', 50, 300)
     if (rateLimitFailure) {
       return rateLimitFailure
     }
@@ -211,6 +208,11 @@ export function createMemberRoutes() {
       return apiError(c, 403, 'insufficient_role', 'সদস্য প্রোফাইল সম্পাদনা করতে Manager বা তার উপরের ভূমিকা প্রয়োজন।')
     }
 
+    const rateLimitFailure = await assertRateLimit(c, 'member-update', 50, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
     try {
       return apiOk(c, {
         member: await updateMember(
@@ -237,6 +239,21 @@ export function createMemberRoutes() {
       return apiOk(c, { success: true })
     } catch (error) {
       return apiError(c, 400, 'member_archive_failed', routeErrorMessage(error))
+    }
+  })
+
+  app.post('/:memberId/restore', requirePermission('members.manage'), async (c) => {
+    const actor = c.get('sessionUser')
+    if (!requireSensitiveMemberRole(actor)) {
+      return apiError(c, 403, 'insufficient_role', 'সদস্য পুনরুদ্ধার করতে Manager বা তার উপরের ভূমিকা প্রয়োজন।')
+    }
+
+    try {
+      return apiOk(c, {
+        member: await restoreMember(c.env, actor!, c.req.param('memberId'), c.get('requestId')),
+      })
+    } catch (error) {
+      return apiError(c, 400, 'member_restore_failed', routeErrorMessage(error))
     }
   })
 

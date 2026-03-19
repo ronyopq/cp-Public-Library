@@ -35,9 +35,9 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: cppl-site
+          projectName: cppl
           directory: dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deployment Success
-        run: echo "✅ Deployed to https://cppl-site.pages.dev"
+        run: echo "✅ Deployed to https://cppl.pages.dev"

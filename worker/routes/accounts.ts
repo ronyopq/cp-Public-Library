@@ -12,6 +12,7 @@ import {
 import type { AppEnv } from '../types'
 import { requirePermission } from '../lib/auth'
 import { apiError, apiOk } from '../lib/http'
+import { assertRateLimit } from '../lib/security'
 import {
   archiveFeeType,
   collectAccountingPayment,
@@ -20,7 +21,9 @@ import {
   getAccountingDashboard,
   getAccountingReport,
   getMemberLedger,
+  listArchivedFeeTypes,
   reprintReceipt,
+  restoreFeeType,
   searchMembersForAccounts,
   updateFeeType,
   voidAccountingPayment,
@@ -71,10 +74,24 @@ export function createAccountRoutes() {
     return apiOk(c, (await getAccountingDashboard(c.env.DB)).feeTypes)
   })
 
+  app.get('/fee-types/archived', async (c) => {
+    const actor = c.get('sessionUser')
+    if (!isAdminOrAbove(actor)) {
+      return apiError(c, 403, 'insufficient_role', 'আর্কাইভ ফি টাইপ দেখতে Admin বা Super Admin প্রয়োজন।')
+    }
+
+    return apiOk(c, { items: await listArchivedFeeTypes(c.env.DB) })
+  })
+
   app.post('/fee-types', zValidator('json', feeTypeDefinitionSchema), async (c) => {
     const actor = c.get('sessionUser')
     if (!isAdminOrAbove(actor)) {
       return apiError(c, 403, 'insufficient_role', 'ফি টাইপ তৈরি করতে Admin বা Super Admin প্রয়োজন।')
+    }
+
+    const rateLimitFailure = await assertRateLimit(c, 'account-fee-type-create', 20, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
     }
 
     try {
@@ -99,6 +116,11 @@ export function createAccountRoutes() {
     const actor = c.get('sessionUser')
     if (!isAdminOrAbove(actor)) {
       return apiError(c, 403, 'insufficient_role', 'ফি টাইপ আপডেট করতে Admin বা Super Admin প্রয়োজন।')
+    }
+
+    const rateLimitFailure = await assertRateLimit(c, 'account-fee-type-update', 40, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
     }
 
     try {
@@ -130,8 +152,33 @@ export function createAccountRoutes() {
     }
   })
 
+  app.post('/fee-types/:feeTypeId/restore', async (c) => {
+    const actor = c.get('sessionUser')
+    if (!isAdminOrAbove(actor)) {
+      return apiError(c, 403, 'insufficient_role', 'ফি টাইপ পুনরুদ্ধার করতে Admin বা Super Admin প্রয়োজন।')
+    }
+
+    try {
+      return apiOk(c, {
+        feeType: await restoreFeeType(
+          c.env.DB,
+          actor!,
+          c.req.param('feeTypeId'),
+          c.get('requestId'),
+        ),
+      })
+    } catch (error) {
+      return apiError(c, 400, 'fee_type_restore_failed', routeErrorMessage(error))
+    }
+  })
+
   app.post('/collect', requirePermission('accounts.manage'), zValidator('json', accountingCollectionSchema), async (c) => {
     const actor = c.get('sessionUser')
+    const rateLimitFailure = await assertRateLimit(c, 'account-collect', 60, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
     try {
       return apiOk(
         c,
@@ -183,6 +230,11 @@ export function createAccountRoutes() {
 
   app.post('/reports/export', requirePermission('reports.view'), zValidator('json', accountingExportSchema), async (c) => {
     const actor = c.get('sessionUser')
+    const rateLimitFailure = await assertRateLimit(c, 'account-report-export', 25, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
     try {
       const payload = c.req.valid('json') as any
       return apiOk(c, {
@@ -201,6 +253,11 @@ export function createAccountRoutes() {
 
   app.post('/reports/preview', requirePermission('reports.view'), zValidator('json', accountingReportFilterSchema), async (c) => {
     const actor = c.get('sessionUser')
+    const rateLimitFailure = await assertRateLimit(c, 'account-report-preview', 40, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
     try {
       return apiOk(c, {
         preview: await exportAccountingReport(
