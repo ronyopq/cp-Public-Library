@@ -1,34 +1,29 @@
 #!/bin/bash
-# Setup GitHub Secrets for Cloudflare Deploy
+set -euo pipefail
 
-set -e
+REPO="${1:-owner/repo}"
+API_TOKEN="${CLOUDFLARE_API_TOKEN:-}"
+ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:-}"
 
-REPO="ronyopq/cp-Public-Library"
-TOKEN="yePcNYOgACyicgSpA9xr-U3kN3nzakltub3ipT82"
-ACCOUNT_ID="0aa3a7240be2b718a369f43f91e200b9"
-
-echo "🔧 Setting up GitHub Secrets..."
-echo "Repository: $REPO"
-
-# Install GitHub CLI if needed
-if ! command -v gh &> /dev/null; then
-    echo "Installing GitHub CLI..."
-    # Installation instructions for different OS
-    echo "Please install GitHub CLI from: https://cli.github.com"
-    exit 1
+if ! command -v gh >/dev/null 2>&1; then
+  echo "GitHub CLI (gh) is required. Install it from https://cli.github.com" >&2
+  exit 1
 fi
 
-# Authenticate
-echo "🔐 Authenticating with GitHub..."
-gh auth login
+if [ -z "$API_TOKEN" ]; then
+  read -r -p "Enter CLOUDFLARE_API_TOKEN: " API_TOKEN
+fi
 
-# Set secrets
-echo "📝 Setting CLOUDFLARE_API_TOKEN..."
-echo "$TOKEN" | gh secret set CLOUDFLARE_API_TOKEN -R $REPO
+if [ -z "$ACCOUNT_ID" ]; then
+  read -r -p "Enter CLOUDFLARE_ACCOUNT_ID: " ACCOUNT_ID
+fi
 
-echo "📝 Setting CLOUDFLARE_ACCOUNT_ID..."
-echo "$ACCOUNT_ID" | gh secret set CLOUDFLARE_ACCOUNT_ID -R $REPO
+if [ -z "$API_TOKEN" ] || [ -z "$ACCOUNT_ID" ]; then
+  echo "Both CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are required." >&2
+  exit 1
+fi
 
-echo "✅ Secrets configured!"
-echo ""
-echo "🚀 Website will auto-deploy at: https://cppl-site.pages.dev"
+printf '%s' "$API_TOKEN" | gh secret set CLOUDFLARE_API_TOKEN -R "$REPO"
+printf '%s' "$ACCOUNT_ID" | gh secret set CLOUDFLARE_ACCOUNT_ID -R "$REPO"
+
+echo "GitHub Actions secrets updated for $REPO"

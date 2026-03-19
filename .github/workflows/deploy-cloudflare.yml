@@ -1,18 +1,17 @@
-name: Deploy to Cloudflare Pages
+name: Deploy Cloudflare Worker
 
 on:
   push:
     branches:
       - main
-      - production
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
 
 jobs:
-  build-and-deploy:
-    name: Build and Deploy
+  deploy:
+    name: Validate and Deploy
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -33,18 +32,17 @@ jobs:
       - name: TypeScript check
         run: npm run typecheck
 
-      - name: Build Vite app
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
         run: npm run build
 
-      - name: Deploy to Cloudflare Pages
-        run: npx wrangler pages deploy dist --project-name cppl
+      - name: Deploy Worker
+        run: npx wrangler deploy --config wrangler.jsonc
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
-      - name: Post Deployment
-        if: success()
-        run: |
-          echo "✅ Successfully deployed to Cloudflare Pages!"
-          echo "🌐 Website: https://cppl.pages.dev/"
-          echo "📚 Repository: https://github.com/ronyopq/cp-Public-Library"

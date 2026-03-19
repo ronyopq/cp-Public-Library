@@ -1,19 +1,19 @@
-name: Deploy Frontend to Pages
+name: Continuous Integration
 
 on:
+  pull_request:
   push:
-    branches:
+    branches-ignore:
       - main
 
-concurrency:
-  group: pages
-  cancel-in-progress: false
+env:
+  NODE_VERSION: '20'
 
 jobs:
-  deploy:
-    name: Deploy to Cloudflare Pages
+  validate:
+    name: Typecheck, lint, test, and build
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,23 +21,20 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build project
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
         run: npm run build
-
-      - name: Deploy to Pages
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: cppl
-          directory: dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deployment Success
-        run: echo "✅ Deployed to https://cppl.pages.dev"

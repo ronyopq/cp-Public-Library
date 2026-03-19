@@ -1,43 +1,28 @@
-# Setup GitHub Secrets for Cloudflare Deploy (PowerShell)
+param(
+    [string]$Repo = "owner/repo",
+    [string]$CloudflareApiToken = $env:CLOUDFLARE_API_TOKEN,
+    [string]$CloudflareAccountId = $env:CLOUDFLARE_ACCOUNT_ID
+)
 
-$REPO = "ronyopq/cp-Public-Library"
-$TOKEN = "yePcNYOgACyicgSpA9xr-U3kN3nzakltub3ipT82"
-$ACCOUNT_ID = "0aa3a7240be2b718a369f43f91e200b9"
-
-Write-Host "🔧 Setting up GitHub Secrets..." -ForegroundColor Cyan
-Write-Host "Repository: $REPO" -ForegroundColor Yellow
-Write-Host ""
-
-# Check if GitHub CLI is installed
-$ghInstalled = Get-Command gh -ErrorAction SilentlyContinue
-if (-not $ghInstalled) {
-    Write-Host "❌ GitHub CLI not found" -ForegroundColor Red
-    Write-Host "Install from: https://cli.github.com" -ForegroundColor Yellow
+if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+    Write-Error "GitHub CLI (gh) is required. Install it from https://cli.github.com"
     exit 1
 }
 
-# Check authentication
-Write-Host "🔐 Checking GitHub authentication..." -ForegroundColor Cyan
-$authStatus = & gh auth status 2>&1
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Please login to GitHub..." -ForegroundColor Yellow
-    & gh auth login
+if (-not $CloudflareApiToken) {
+    $CloudflareApiToken = Read-Host "Enter CLOUDFLARE_API_TOKEN"
 }
 
-# Set secrets
-Write-Host "📝 Setting CLOUDFLARE_API_TOKEN..." -ForegroundColor Cyan
-$TOKEN | & gh secret set CLOUDFLARE_API_TOKEN -R $REPO
+if (-not $CloudflareAccountId) {
+    $CloudflareAccountId = Read-Host "Enter CLOUDFLARE_ACCOUNT_ID"
+}
 
-Write-Host "✅ CLOUDFLARE_API_TOKEN set!" -ForegroundColor Green
-Write-Host ""
+if (-not $CloudflareApiToken -or -not $CloudflareAccountId) {
+    Write-Error "Both CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are required."
+    exit 1
+}
 
-Write-Host "📝 Setting CLOUDFLARE_ACCOUNT_ID..." -ForegroundColor Cyan
-$ACCOUNT_ID | & gh secret set CLOUDFLARE_ACCOUNT_ID -R $REPO
+$CloudflareApiToken | gh secret set CLOUDFLARE_API_TOKEN -R $Repo
+$CloudflareAccountId | gh secret set CLOUDFLARE_ACCOUNT_ID -R $Repo
 
-Write-Host "✅ CLOUDFLARE_ACCOUNT_ID set!" -ForegroundColor Green
-Write-Host ""
-
-Write-Host "✅ All secrets configured!" -ForegroundColor Green
-Write-Host ""
-Write-Host "🚀 Website will auto-deploy at: https://cppl-site.pages.dev" -ForegroundColor Cyan
-Write-Host "📊 Check deployment: https://github.com/$REPO/actions" -ForegroundColor Yellow
+Write-Host "GitHub Actions secrets updated for $Repo" -ForegroundColor Green

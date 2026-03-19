@@ -1,190 +1,140 @@
-# Cloudflare Deployment Guide - Community Public Library
+# Cloudflare Bindings Guide
 
-## 🚀 One-Time Setup (5 minutes)
+## Worker configuration
 
-### Step 1: Create Cloudflare API Token
+Canonical config: [wrangler.jsonc](/D:/RONY/OneDrive%20-%20NRDS/CodeX/CX-%20Public%20Library/wrangler.jsonc)
 
-1. Go to: https://dash.cloudflare.com/profile/api-tokens
-2. Click "Create Token"
-3. Select template: **Edit Cloudflare Workers**
-4. Click "Use template"
-5. Configure permissions:
-   - **Permissions**: Workers (All), D1 (Write), KV (Write), R2 (Write), Account Settings (Read)
-   - **Account Resources**: Include "All accounts"
-   - **Zone Resources**: Include "All zones"
-6. Click "Continue to summary"
-7. Click "Create Token"
-8. **Copy the token** (it will be shown only once)
+This project uses:
 
-### Step 2: Add GitHub Secrets
+- `main = worker/index.ts`
+- `assets.directory = ./dist`
+- `assets.binding = ASSETS`
+- Worker-native bindings for D1, KV, R2, Queues, and Durable Objects
 
-In your GitHub repo:
+## Required resources
 
-1. Go to: **Settings → Secrets and variables → Actions**
-2. Click **"New repository secret"**
-3. Add these secrets:
+### D1
 
-| Secret Name | Value |
-|---|---|
-| `CLOUDFLARE_API_TOKEN` | `yePcNYOgACyicgSpA9xr-U3kN3nzakltub3ipT82` |
-| `CLOUDFLARE_ACCOUNT_ID` | `0aa3a7240be2b718a369f43f91e200b9` |
+Binding: `DB`
 
-### Step 3: Create D1 Database
+Purpose:
 
-Run these commands locally:
+- users, sessions, RBAC
+- bibliographic records and physical copies
+- loans, fines, reminders, reservations
+- accounts, ledgers, receipts, exports
+- competitions, audit logs, app settings
+
+Create:
 
 ```bash
-# Create database
 wrangler d1 create cx-public-library-db
-
-# Apply migrations
-wrangler d1 migrations create cx-public-library-db init_schema
-# (This creates a migration file in migrations/ folder)
-
-# Apply schema
-npm run db:migrate:remote
-
-# Seed data
-npm run db:seed:remote
 ```
 
-### Step 4: Create KV Namespace
+Add the returned `database_id` to `wrangler.jsonc`.
+
+### KV
+
+Binding: `APP_CACHE`
+
+Purpose:
+
+- cache copies of feature flags
+- IP-based rate limit windows
+- lightweight temporary state only
+
+Create:
 
 ```bash
-wrangler kv:namespace create "APP_CACHE"
+wrangler kv namespace create APP_CACHE
 ```
 
-### Step 5: Create R2 Bucket
+Add the returned namespace ID to `wrangler.jsonc`.
+
+### R2
+
+Binding: `MEDIA_BUCKET`
+
+Purpose:
+
+- book cover images and thumbnails
+- title/copyright page scans
+- member photos
+- receipts, reports, backups, exports, print assets
+
+Create:
 
 ```bash
 wrangler r2 bucket create cx-public-library-media
 ```
 
----
+### Queue
 
-## 🔄 Automatic Deployment
+Binding: `TASK_QUEUE`
 
-Once setup is complete, every push to `main` automatically deploys:
+Purpose:
+
+- reminder dispatch
+- retryable background work
+- backup/export snapshot jobs
+
+Create:
 
 ```bash
-git add .
-git commit -m "Your changes"
-git push origin main
+wrangler queues create cx-public-library-tasks
 ```
 
-GitHub Actions will:
-1. ✅ Run TypeScript checks
-2. ✅ Build Vite app and Worker
-3. ✅ Deploy to Cloudflare Workers
-4. ✅ Configure D1 and KV bindings
+### Durable Object
 
-**Live URL**: https://cppl.pages.dev/
+Binding: `ACCESSION_COUNTER`
 
----
+Purpose:
 
-## 🛠️ Manual Deployment (if needed)
+- concurrency-safe accession sequence generation
+
+Migration tag `v1` is already declared in `wrangler.jsonc`.
+
+## Cron
+
+The Worker implements a scheduled handler for reminder sweeps and background maintenance.
+
+Recommended cron:
+
+- `0 3 * * *` UTC
+
+This maps to `09:00` in `Asia/Dhaka`.
+
+Example:
 
 ```bash
-# Build
-npm run build
+wrangler triggers create cx-public-library --cron "0 3 * * *"
+```
 
-# Deploy
-export CLOUDFLARE_API_TOKEN="yePcNYOgACyicgSpA9xr-U3kN3nzakltub3ipT82"
-export CLOUDFLARE_ACCOUNT_ID="0aa3a7240be2b718a369f43f91e200b9"
+## Runtime vars
+
+Set in `wrangler.jsonc` or per-environment:
+
+- `APP_NAME_BN`
+- `APP_NAME_EN`
+- `APP_TIMEZONE=Asia/Dhaka`
+- `LIBRARY_CODE`
+- `DEFAULT_FINE_PER_DAY`
+- `AI_BOOK_INTAKE_MODEL`
+
+## Remote deployment sequence
+
+```bash
+npm run build
+npm run db:migrate:remote
+npm run db:seed:remote
 npm run deploy
 ```
 
----
+## CI secrets
 
-## 📊 Environment Setup
+For GitHub deployment workflows, define:
 
-### D1 Database
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
 
-The database includes:
-- Members table
-- Books / Bibliographic records
-- Loans & Circulation
-- Fees & Payments  
-- Competitions & Results
-- Settings & Configuration
-
-### KV Namespaces
-
-- `APP_CACHE` - Session cache, temporary data
-
-### R2 Buckets
-
-- `cx-public-library-media` - Member photos, book covers, documents
-
-### Cron Jobs
-
-Daily maintenance at **3 AM (Asia/Dhaka)**:
-- Circulation reminders
-- Overdue notifications
-- Report generation
-
----
-
-## 🔐 Security Notes
-
-- ✅ API token is stored in GitHub Secrets (encrypted)
-- ✅ Token is never visible in logs
-- ✅ Each deployment creates a new version
-- ✅ Previous versions are automatically archived
-- ✅ All data in D1 is encrypted at rest
-
----
-
-## 📝 Troubleshooting
-
-### Deployment fails with "Authentication failed"
-
-1. Verify API token has correct permissions
-2. Ensure token hasn't expired
-3. Check Account ID matches your Cloudflare account
-
-### D1 Database not found
-
-```bash
-# View your databases
-wrangler d1 list
-
-# The database should show: cx-public-library-db
-```
-
-### KV Namespace missing
-
-```bash
-# Create if missing
-wrangler kv:namespace create "APP_CACHE"
-
-# Update wrangler.jsonc with returned ID
-```
-
-### Module not found errors
-
-Ensure `tsconfig.worker.json` has:
-```json
-"paths": {
-  "@shared/*": ["shared/*"],
-  "@worker/*": ["worker/*"]
-}
-```
-
----
-
-## 🎯 Next Steps
-
-1. ✅ Push updated code to main branch
-2. ✅ Watch GitHub Actions deploy automatically
-3. ✅ Visit https://cppl.pages.dev to verify
-4. ✅ Login with: `admin@library.bd` / `Password123`
-5. ✅ Change password in admin settings
-
----
-
-## 📞 Support
-
-For Cloudflare issues: https://status.cloudflare.com/
-For Worker documentation: https://developers.cloudflare.com/workers/
-
+These secrets must be added in GitHub Actions settings and must never be committed into repository files or scripts.
