@@ -25,6 +25,7 @@ import { Modal } from '@/components/ui/Modal'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import { apiDelete, apiForm, apiPatch, apiPost, apiRequest, errorMessage } from '@/lib/api'
 import { useAuth } from '@/providers/useAuth'
+import { ArchivedMembersPanel } from './ArchivedMembersPanel'
 import { MemberProfilePanel } from './MemberProfilePanel'
 
 type MemberFormValues = z.infer<typeof memberSchema>
@@ -776,6 +777,8 @@ export function MembersPage() {
           description="তালিকা থেকে সদস্য বেছে নিলে বিস্তারিত প্রোফাইল, ইতিহাস, এবং ID card preview দেখা যাবে।"
         />
       )}
+
+      <ArchivedMembersPanel enabled={canEditSensitive} />
 
       <MemberFormModal
         key={`create-${Number(createOpen)}`}

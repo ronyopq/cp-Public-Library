@@ -731,13 +731,79 @@ function buildDuplicateReason(record: BibliographicRecord, options: {
   return hints.join(', ')
 }
 
+export function evaluateDuplicateCandidate(
+  metadata: Partial<BibliographicRecord>,
+  record: BibliographicRecord,
+): DuplicateCandidate | null {
+  const normalizedPublisher = normalizeText(metadata.publisherName)
+  const isbn10 = normalizeIsbn(metadata.isbn10).isbn10 ?? metadata.isbn10 ?? ''
+  const isbn13 = normalizeIsbn(metadata.isbn13).isbn13 ?? metadata.isbn13 ?? ''
+  const exactIsbnMatch =
+    Boolean(isbn10 && record.isbn10 === isbn10) ||
+    Boolean(isbn13 && record.isbn13 === isbn13)
+  const titleScore = Math.max(
+    similarityScore(metadata.titleEn ?? '', record.titleEn),
+    similarityScore(metadata.titleBn ?? '', record.titleBn ?? ''),
+  )
+  const authorScore = similarityScore(
+    [...(metadata.authors ?? []), ...(metadata.coAuthors ?? [])].join(' '),
+    [...record.authors, ...record.coAuthors].join(' '),
+  )
+  const editionScore = similarityScore(metadata.edition ?? '', record.edition ?? '')
+  const publisherMatched =
+    Boolean(normalizedPublisher) &&
+    normalizeText(record.publisherName) === normalizedPublisher
+  const yearMatched =
+    Boolean(metadata.publicationYear) && metadata.publicationYear === record.publicationYear
+
+  const similarityScoreValue = exactIsbnMatch
+    ? 1
+    : Number(
+        (
+          titleScore * 0.5 +
+          authorScore * 0.23 +
+          editionScore * 0.12 +
+          (publisherMatched ? 0.08 : 0) +
+          (yearMatched ? 0.07 : 0)
+        ).toFixed(2),
+      )
+
+  const reason = buildDuplicateReason(record, {
+    exactIsbnMatch,
+    titleScore,
+    authorScore,
+    editionScore,
+    publisherMatched,
+    yearMatched,
+  })
+
+  const candidate = {
+    record: {
+      ...record,
+      duplicateScore: similarityScoreValue,
+      duplicateHints: reason
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    },
+    reason,
+    resolutionHint:
+      exactIsbnMatch || similarityScoreValue >= 0.82
+        ? 'add_copy_to_existing_record'
+        : 'use_existing_record',
+    exactIsbnMatch,
+    similarityScore: similarityScoreValue,
+  } satisfies DuplicateCandidate
+
+  return candidate.exactIsbnMatch || candidate.similarityScore >= 0.42 ? candidate : null
+}
+
 export async function detectDuplicateBooks(
   db: D1Database,
   metadata: Partial<BibliographicRecord>,
 ): Promise<DuplicateCandidate[]> {
   const normalizedTitle = normalizeText(metadata.titleBn || metadata.titleEn)
   const normalizedAuthors = normalizeText([...(metadata.authors ?? []), ...(metadata.coAuthors ?? [])].join(' '))
-  const normalizedPublisher = normalizeText(metadata.publisherName)
   const isbn10 = normalizeIsbn(metadata.isbn10).isbn10 ?? metadata.isbn10 ?? ''
   const isbn13 = normalizeIsbn(metadata.isbn13).isbn13 ?? metadata.isbn13 ?? ''
 
@@ -773,65 +839,8 @@ export async function detectDuplicateBooks(
 
   return rows
     .map((row) => mapBibliographicRow(row))
-    .map((record) => {
-      const exactIsbnMatch =
-        Boolean(isbn10 && record.isbn10 === isbn10) ||
-        Boolean(isbn13 && record.isbn13 === isbn13)
-      const titleScore = Math.max(
-        similarityScore(metadata.titleEn ?? '', record.titleEn),
-        similarityScore(metadata.titleBn ?? '', record.titleBn ?? ''),
-      )
-      const authorScore = similarityScore(
-        [...(metadata.authors ?? []), ...(metadata.coAuthors ?? [])].join(' '),
-        [...record.authors, ...record.coAuthors].join(' '),
-      )
-      const editionScore = similarityScore(metadata.edition ?? '', record.edition ?? '')
-      const publisherMatched =
-        Boolean(normalizedPublisher) &&
-        normalizeText(record.publisherName) === normalizedPublisher
-      const yearMatched =
-        Boolean(metadata.publicationYear) && metadata.publicationYear === record.publicationYear
-
-      const similarityScoreValue = exactIsbnMatch
-        ? 1
-        : Number(
-            (
-              titleScore * 0.5 +
-              authorScore * 0.23 +
-              editionScore * 0.12 +
-              (publisherMatched ? 0.08 : 0) +
-              (yearMatched ? 0.07 : 0)
-            ).toFixed(2),
-          )
-
-      const reason = buildDuplicateReason(record, {
-        exactIsbnMatch,
-        titleScore,
-        authorScore,
-        editionScore,
-        publisherMatched,
-        yearMatched,
-      })
-
-      return {
-        record: {
-          ...record,
-          duplicateScore: similarityScoreValue,
-          duplicateHints: reason
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean),
-        },
-        reason,
-        resolutionHint:
-          exactIsbnMatch || similarityScoreValue >= 0.82
-            ? 'add_copy_to_existing_record'
-            : 'use_existing_record',
-        exactIsbnMatch,
-        similarityScore: similarityScoreValue,
-      } satisfies DuplicateCandidate
-    })
-    .filter((candidate) => candidate.exactIsbnMatch || candidate.similarityScore >= 0.42)
+    .map((record) => evaluateDuplicateCandidate(metadata, record))
+    .filter((candidate): candidate is DuplicateCandidate => Boolean(candidate))
     .sort((left, right) => right.similarityScore - left.similarityScore)
 }
 
@@ -1208,7 +1217,7 @@ export async function requestAccessionCodes(
   return payload.codes
 }
 
-async function createCopiesForRecord(
+export async function createCopiesForRecord(
   env: AppBindings,
   record: BibliographicRecord,
   actorId: string,

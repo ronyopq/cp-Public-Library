@@ -31,6 +31,7 @@ import { Modal } from '@/components/ui/Modal'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import { apiDelete, apiPatch, apiPost, apiRequest, errorMessage } from '@/lib/api'
 import { useAuth } from '@/providers/useAuth'
+import { ArchivedFeeTypesPanel } from './ArchivedFeeTypesPanel'
 
 interface LookupPayload {
   items: LookupOption[]
@@ -679,6 +680,8 @@ export function AccountsPage() {
           />
         </section>
       ) : null}
+
+      <ArchivedFeeTypesPanel enabled={canManageFeeTypes} />
 
       {canManageReports ? (
         <section className="content-card section-grid">

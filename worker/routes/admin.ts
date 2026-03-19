@@ -2,7 +2,10 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import {
   adminResetPasswordSchema,
+  auditLogFilterSchema,
+  backupRequestSchema,
   featureFlagSchema,
+  importModeSchema,
   shellSettingsSchema,
   type ManagedUser,
   type PermissionOverrideRecord,
@@ -25,6 +28,12 @@ import {
   saveShellSettings,
 } from '../lib/settings'
 import { buildR2Key, fileErrorResponse, putFile } from '../lib/storage'
+import {
+  importCatalogFromCsv,
+  importMembersFromCsv,
+  listRecentExports,
+  requestSystemBackupExport,
+} from '../services/maintenance'
 
 async function getRoles(db: D1Database): Promise<RoleRecord[]> {
   return dbAll<RoleRecord>(
@@ -260,6 +269,26 @@ async function countActiveSuperAdmins(db: D1Database): Promise<number> {
   return Number(row?.total ?? 0)
 }
 
+function safeJsonObject(value: string | null) {
+  if (!value) {
+    return null
+  }
+
+  try {
+    return JSON.parse(value) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+function dateStartIso(value: string) {
+  return new Date(`${value}T00:00:00+06:00`).toISOString()
+}
+
+function dateEndIso(value: string) {
+  return new Date(`${value}T23:59:59.999+06:00`).toISOString()
+}
+
 export function createAdminRoutes() {
   const app = new Hono<AppEnv>()
 
@@ -286,6 +315,11 @@ export function createAdminRoutes() {
     const actor = c.get('sessionUser')
     if (!actor) {
       return apiError(c, 401, 'unauthorized', 'অনুগ্রহ করে সাইন ইন করুন।')
+    }
+
+    const rateLimitFailure = await assertRateLimit(c, 'admin-user-create', 20, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
     }
 
     const payload = c.req.valid('json')
@@ -364,6 +398,11 @@ export function createAdminRoutes() {
     const actor = c.get('sessionUser')
     if (!actor) {
       return apiError(c, 401, 'unauthorized', 'অনুগ্রহ করে সাইন ইন করুন।')
+    }
+
+    const rateLimitFailure = await assertRateLimit(c, 'admin-user-update', 40, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
     }
 
     const userId = c.req.param('userId')
@@ -449,6 +488,11 @@ export function createAdminRoutes() {
         return apiError(c, 401, 'unauthorized', 'অনুগ্রহ করে সাইন ইন করুন।')
       }
 
+      const rateLimitFailure = await assertRateLimit(c, 'admin-password-reset', 20, 300)
+      if (rateLimitFailure) {
+        return rateLimitFailure
+      }
+
       const userId = c.req.param('userId')
       const payload = c.req.valid('json')
       const user = await dbFirst<{ id: string }>(
@@ -507,6 +551,11 @@ export function createAdminRoutes() {
       return apiError(c, 401, 'unauthorized', 'অনুগ্রহ করে সাইন ইন করুন।')
     }
 
+    const rateLimitFailure = await assertRateLimit(c, 'admin-settings-shell', 20, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
     const before = await getShellSettings(c.env.DB, c.env)
     const payload = c.req.valid('json')
     await saveShellSettings(c.env.DB, actor.id, payload)
@@ -532,6 +581,11 @@ export function createAdminRoutes() {
     const actor = c.get('sessionUser')
     if (!actor) {
       return apiError(c, 401, 'unauthorized', 'অনুগ্রহ করে সাইন ইন করুন।')
+    }
+
+    const rateLimitFailure = await assertRateLimit(c, 'admin-settings-flags', 20, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
     }
 
     const before = await getFeatureFlags(c.env)
@@ -579,6 +633,12 @@ export function createAdminRoutes() {
         value,
         ['image/png', 'image/jpeg', 'image/svg+xml', 'image/x-icon'],
         fieldName === 'favicon' ? 512 * 1024 : 4 * 1024 * 1024,
+        {
+          allowedExtensions:
+            fieldName === 'favicon'
+              ? ['png', 'svg', 'ico']
+              : ['png', 'jpg', 'jpeg', 'svg'],
+        },
       )
       if (validationError) {
         return fileErrorResponse(c, validationError)
@@ -595,9 +655,156 @@ export function createAdminRoutes() {
     return apiOk(c, uploaded)
   })
 
+  app.get('/exports', requirePermission('exports.manage'), async (c) => {
+    return apiOk(c, await listRecentExports(c.env.DB))
+  })
+
+  app.post('/backups', requirePermission('exports.manage'), zValidator('json', backupRequestSchema), async (c) => {
+    const actor = c.get('sessionUser')
+    if (!actor) {
+      return apiError(c, 401, 'unauthorized', 'অনুগ্রহ করে সাইন ইন করুন।')
+    }
+
+    const rateLimitFailure = await assertRateLimit(c, 'admin-backups', 10, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
+    try {
+      return apiOk(
+        c,
+        await requestSystemBackupExport(
+          c.env,
+          actor,
+          c.req.valid('json'),
+          c.get('requestId'),
+        ),
+        202,
+      )
+    } catch (error) {
+      return apiError(c, 400, 'backup_request_failed', error instanceof Error ? error.message : 'Backup request failed.')
+    }
+  })
+
+  app.post('/imports/members', requirePermission('members.manage'), async (c) => {
+    const actor = c.get('sessionUser')
+    if (!actor) {
+      return apiError(c, 401, 'unauthorized', 'অনুগ্রহ করে সাইন ইন করুন।')
+    }
+
+    const rateLimitFailure = await assertRateLimit(c, 'admin-import-members', 12, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
+    const formData = await c.req.formData()
+    const file = formData.get('file')
+    if (!(file instanceof File) || file.size === 0) {
+      return apiError(c, 400, 'file_missing', 'CSV ফাইল নির্বাচন করুন।')
+    }
+
+    const mode = importModeSchema.parse(String(formData.get('mode') ?? 'create_only'))
+    const validationError = validateFileUpload(
+      file,
+      ['text/csv', 'application/vnd.ms-excel', 'text/plain'],
+      4 * 1024 * 1024,
+      { allowedExtensions: ['csv'], allowEmptyMime: true },
+    )
+    if (validationError) {
+      return fileErrorResponse(c, validationError)
+    }
+
+    try {
+      return apiOk(c, {
+        summary: await importMembersFromCsv(c.env, actor, await file.text(), mode, c.get('requestId')),
+      })
+    } catch (error) {
+      return apiError(c, 400, 'member_import_failed', error instanceof Error ? error.message : 'Member import failed.')
+    }
+  })
+
+  app.post('/imports/catalog', requirePermission('catalog.manage_metadata'), async (c) => {
+    const actor = c.get('sessionUser')
+    if (!actor) {
+      return apiError(c, 401, 'unauthorized', 'অনুগ্রহ করে সাইন ইন করুন।')
+    }
+
+    const rateLimitFailure = await assertRateLimit(c, 'admin-import-catalog', 12, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
+    const formData = await c.req.formData()
+    const file = formData.get('file')
+    if (!(file instanceof File) || file.size === 0) {
+      return apiError(c, 400, 'file_missing', 'CSV ফাইল নির্বাচন করুন।')
+    }
+
+    const mode = importModeSchema.parse(String(formData.get('mode') ?? 'create_only'))
+    const validationError = validateFileUpload(
+      file,
+      ['text/csv', 'application/vnd.ms-excel', 'text/plain'],
+      5 * 1024 * 1024,
+      { allowedExtensions: ['csv'], allowEmptyMime: true },
+    )
+    if (validationError) {
+      return fileErrorResponse(c, validationError)
+    }
+
+    try {
+      return apiOk(c, {
+        summary: await importCatalogFromCsv(c.env, actor, await file.text(), mode, c.get('requestId')),
+      })
+    } catch (error) {
+      return apiError(c, 400, 'catalog_import_failed', error instanceof Error ? error.message : 'Catalog import failed.')
+    }
+  })
+
   app.get('/audit-logs', requirePermission('audit.view'), async (c) => {
-    const query = getPaginationQuery(new URL(c.req.url).searchParams, 25)
-    const likeSearch = `%${query.search}%`
+    const parsed = auditLogFilterSchema.safeParse(
+      Object.fromEntries(new URL(c.req.url).searchParams),
+    )
+    if (!parsed.success) {
+      return apiError(c, 400, 'audit_filter_invalid', 'Audit filter is invalid.', parsed.error.flatten())
+    }
+
+    const filters = parsed.data
+    const where: string[] = []
+    const bindings: unknown[] = []
+
+    if (filters.search) {
+      const likeSearch = `%${filters.search}%`
+      where.push(`(
+        actor_display_name LIKE ?
+        OR action_key LIKE ?
+        OR entity_type LIKE ?
+        OR entity_id LIKE ?
+        OR COALESCE(note, '') LIKE ?
+      )`)
+      bindings.push(likeSearch, likeSearch, likeSearch, likeSearch, likeSearch)
+    }
+    if (filters.actionKey) {
+      where.push(`action_key = ?`)
+      bindings.push(filters.actionKey)
+    }
+    if (filters.entityType) {
+      where.push(`entity_type = ?`)
+      bindings.push(filters.entityType)
+    }
+    if (filters.actorRoleKey) {
+      where.push(`actor_role_key = ?`)
+      bindings.push(filters.actorRoleKey)
+    }
+    if (filters.startDate) {
+      where.push(`created_at >= ?`)
+      bindings.push(dateStartIso(filters.startDate))
+    }
+    if (filters.endDate) {
+      where.push(`created_at <= ?`)
+      bindings.push(dateEndIso(filters.endDate))
+    }
+
+    const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
     const rows = await dbAll<{
       id: string
       actorDisplayName: string
@@ -605,6 +812,11 @@ export function createAdminRoutes() {
       actionKey: string
       entityType: string
       entityId: string
+      requestId: string | null
+      ipAddress: string | null
+      userAgent: string | null
+      beforeJson: string | null
+      afterJson: string | null
       note: string | null
       createdAt: string
     }>(
@@ -617,27 +829,19 @@ export function createAdminRoutes() {
           action_key AS actionKey,
           entity_type AS entityType,
           entity_id AS entityId,
+          request_id AS requestId,
+          ip_address AS ipAddress,
+          user_agent AS userAgent,
+          before_json AS beforeJson,
+          after_json AS afterJson,
           note,
           created_at AS createdAt
         FROM audit_logs
-        WHERE
-          ? = '%%'
-          OR actor_display_name LIKE ?
-          OR action_key LIKE ?
-          OR entity_type LIKE ?
-          OR entity_id LIKE ?
+        ${whereClause}
         ORDER BY created_at DESC
         LIMIT ? OFFSET ?
       `,
-      [
-        likeSearch,
-        likeSearch,
-        likeSearch,
-        likeSearch,
-        likeSearch,
-        query.pageSize,
-        query.offset,
-      ],
+      [...bindings, filters.pageSize, (filters.page - 1) * filters.pageSize],
     )
 
     const total = await dbFirst<{ total: number }>(
@@ -645,21 +849,31 @@ export function createAdminRoutes() {
       `
         SELECT COUNT(*) AS total
         FROM audit_logs
-        WHERE
-          ? = '%%'
-          OR actor_display_name LIKE ?
-          OR action_key LIKE ?
-          OR entity_type LIKE ?
-          OR entity_id LIKE ?
+        ${whereClause}
       `,
-      [likeSearch, likeSearch, likeSearch, likeSearch, likeSearch],
+      bindings,
     )
 
     return apiOk(c, {
-      items: rows,
-      page: query.page,
-      pageSize: query.pageSize,
+      items: rows.map((row) => ({
+        id: row.id,
+        actorDisplayName: row.actorDisplayName,
+        actorRoleKey: row.actorRoleKey,
+        actionKey: row.actionKey,
+        entityType: row.entityType,
+        entityId: row.entityId,
+        requestId: row.requestId,
+        ipAddress: row.ipAddress,
+        userAgent: row.userAgent,
+        before: safeJsonObject(row.beforeJson),
+        after: safeJsonObject(row.afterJson),
+        note: row.note,
+        createdAt: row.createdAt,
+      })),
+      page: filters.page,
+      pageSize: filters.pageSize,
       total: Number(total?.total ?? 0),
+      filters,
     })
   })
 

@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { CheckboxInput, FormField, SelectInput, TextAreaInput, TextInput } from '@/components/ui/FormField'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { apiPut, apiRequest, errorMessage, mediaUrl } from '@/lib/api'
+import { SettingsMaintenancePanel } from './SettingsMaintenancePanel'
 
 type ShellSettingsValues = z.infer<typeof shellSettingsSchema>
 
@@ -329,6 +330,8 @@ export function SettingsPage() {
           </Button>
         </div>
       </form>
+
+      <SettingsMaintenancePanel />
     </div>
   )
 }

@@ -41,3 +41,6 @@
 - Staff dashboard analytics default to the current month in `Asia/Dhaka`, while year and custom range filters reuse the same aggregate pipeline without exposing personally sensitive member-level details.
 - Public reader analytics are strictly privacy-safe: member names, phone numbers, IDs, personal loan history, and donor-private data are never exposed, and `top readers` stays hidden unless at least three distinct readers exist in the selected period.
 - Dashboard and public analytics exports are HTML/CSV-first in this release, with staff-generated files persisted to R2/`exports` for later download or print, while public analytics remains read-only aggregate output.
+- Bulk import support is intentionally CSV-first in this release; staff can import Excel-exported CSV files for members and catalog metadata, while native `.xlsx` parsing is deferred to keep the Worker runtime lean.
+- Production deployment uses a single Cloudflare Worker with static assets served through the `ASSETS` binding, rather than a split Pages-only frontend deployment.
+- Cloudflare credentials, account IDs, and bootstrap passwords must be provided through local environment variables or GitHub secrets and are never stored in repository files.

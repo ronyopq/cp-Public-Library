@@ -390,7 +390,7 @@ export async function saveCirculationSettings(
   )
 }
 
-function calculateLoanAging(
+export function calculateLoanAging(
   dueAt: string,
   effectiveAt: string,
   settings: CirculationSettings,

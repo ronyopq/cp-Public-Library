@@ -32,14 +32,19 @@
 - Added filterable staff dashboard analytics for titles/copies/taxonomy/member/circulation totals, recent additions, chart-ready monthly series, manager-scoped audit activity, and export-ready CSV/HTML hooks persisted through R2 + `exports`.
 - Added privacy-safe public analytics with month/year/custom filters, anonymized top readers, most-read books, popular authors/categories/publishers, public menu visibility control, and local D1 performance indexes via `0007_dashboard_analytics_indexes.sql`.
 - Verified `typecheck`, `lint`, `build`, and `db:migrate:local` after the analytics implementation.
+- Added audit log filtering/details UI, soft-delete restore panels for members and fee types, backup/export requests, and CSV-first bulk import operations in the admin/settings experience.
+- Hardened request handling with stronger file validation rules, broader rate limiting coverage, stricter response security headers, and an app-level React error boundary for graceful failure UX.
+- Added critical automated tests for password/auth helpers, RBAC checks, book intake validation and duplicate scoring, copy creation, circulation validation/aging, reminder dispatch, and accounting receipt/report helpers.
+- Replaced stale Pages-only deployment artifacts with Worker-native `wrangler.jsonc`, GitHub CI/deploy workflows, Cloudflare binding docs, and secret-safe setup helper scripts.
+- Verified `typecheck`, `lint`, `test`, and `build`, and validated the full migration chain against a fresh isolated local D1 state directory after fixing the `0006_accounting_and_reports.sql` foreign-key issue.
 
 ## In Progress
 
-- Worker API architecture and shared TypeScript contracts are being expanded further into copy management, print center workflows, and deeper export/report automation.
 - Bangla-first responsive frontend shell is in place across admin and public flows and still needs deeper coverage for copy inventory, print center, and advanced visual analytics polish.
+- Deployment remains pending real Cloudflare resource IDs, GitHub secrets, and a live production rollout from this workspace.
 
 ## Next
 
-- Implement copy/item management, print-center operations, and deeper accounting statement/export workflows.
-- Add richer chart visualizations/code-splitting for the growing analytics-heavy bundle and expand public search/discovery refinements.
-- Add route-level tests and end-to-end auth/RBAC coverage against local D1.
+- Implement copy/item management, print-center operations, and deeper accounting statement/export workflows where the UI is still placeholder-only.
+- Add richer chart visualizations and code-splitting for the growing analytics-heavy bundle.
+- Expand route-level and end-to-end coverage around D1-backed auth/session, imports, reminders, and full accounting collections.

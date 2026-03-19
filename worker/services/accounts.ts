@@ -1107,7 +1107,7 @@ function summarizeDueLines(dueLines: MemberDueLine[], totalMemberPayments: numbe
   }
 }
 
-function generateReceiptNo(libraryCode: string) {
+export function generateReceiptNo(libraryCode: string) {
   const year = currentDateToken().slice(0, 4)
   return `${libraryCode}-MR-${year}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`
 }
@@ -1126,7 +1126,7 @@ async function ensureUniqueReceiptNo(db: D1Database, libraryCode: string): Promi
   }
 }
 
-function buildReceiptHtml(libraryName: string, receipt: AccountingReceiptDetail) {
+export function buildReceiptHtml(libraryName: string, receipt: AccountingReceiptDetail) {
   const itemRows = receipt.items
     .map(
       (item, index) => `
@@ -2708,7 +2708,7 @@ function buildReportHtml(libraryName: string, report: AccountingReportPayload) {
   `
 }
 
-function buildReportCsv(report: AccountingReportPayload) {
+export function buildReportCsv(report: AccountingReportPayload) {
   const rows = [
     ['Report', 'Accounting Report'],
     ['Preset', report.filters.preset],

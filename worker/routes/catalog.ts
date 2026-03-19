@@ -50,6 +50,7 @@ export function createCatalogRoutes() {
       fileValue,
       imageTypes,
       kindValue === 'cover_thumbnail' ? 2 * 1024 * 1024 : 8 * 1024 * 1024,
+      { allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'] },
     )
     if (validationError) {
       return fileErrorResponse(c, validationError)
@@ -70,7 +71,9 @@ export function createCatalogRoutes() {
     let metadataAsset: Awaited<ReturnType<typeof uploadCatalogAsset>> | null = null
 
     if (pageImage instanceof File && pageImage.size > 0) {
-      const validationError = validateFileUpload(pageImage, imageTypes, 10 * 1024 * 1024)
+      const validationError = validateFileUpload(pageImage, imageTypes, 10 * 1024 * 1024, {
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+      })
       if (validationError) {
         return fileErrorResponse(c, validationError)
       }
@@ -118,6 +121,11 @@ export function createCatalogRoutes() {
     const actor = c.get('sessionUser')
     if (!actor) {
       return apiError(c, 401, 'unauthorized', 'অনুগ্রহ করে আবার সাইন ইন করুন।')
+    }
+
+    const rateLimitFailure = await assertRateLimit(c, 'catalog-save', 25, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
     }
 
     const result = await saveCatalogIntake(

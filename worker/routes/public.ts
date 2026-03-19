@@ -13,6 +13,7 @@ import { writeAudit } from '../lib/audit'
 import { dbFirst, dbValue } from '../lib/db'
 import { apiError, apiOk } from '../lib/http'
 import { hashPassword } from '../lib/password'
+import { assertRateLimit } from '../lib/security'
 import {
   getFeatureFlags,
   getPublicSiteSettings,
@@ -178,6 +179,11 @@ export function createPublicRoutes() {
       const featureFlags = c.get('featureFlags')
       if (!featureFlags.competitions_module_enabled || !featureFlags.online_registration_enabled) {
         return apiError(c, 403, 'registration_disabled', 'অনলাইন নিবন্ধন এখন বন্ধ আছে।')
+      }
+
+      const rateLimitFailure = await assertRateLimit(c, 'public-competition-registration', 20, 300)
+      if (rateLimitFailure) {
+        return rateLimitFailure
       }
 
       const payload = c.req.valid('json')

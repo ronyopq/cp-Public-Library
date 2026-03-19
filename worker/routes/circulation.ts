@@ -13,6 +13,7 @@ import {
 import type { AppEnv } from '../types'
 import { requirePermission } from '../lib/auth'
 import { apiError, apiOk, getPaginationQuery } from '../lib/http'
+import { assertRateLimit } from '../lib/security'
 import {
   createReservation,
   getCirculationDashboard,
@@ -105,6 +106,11 @@ export function createCirculationRoutes() {
       return apiError(c, 403, 'insufficient_role', 'Only Manager and above can change circulation settings.')
     }
 
+    const rateLimitFailure = await assertRateLimit(c, 'circulation-settings', 15, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
     await saveCirculationSettings(
       c.env.DB,
       actor!,
@@ -117,6 +123,11 @@ export function createCirculationRoutes() {
 
   app.post('/issue', zValidator('json', issueSchema), async (c) => {
     const actor = c.get('sessionUser')
+    const rateLimitFailure = await assertRateLimit(c, 'circulation-issue', 80, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
     try {
       return apiOk(
         c,
@@ -130,6 +141,11 @@ export function createCirculationRoutes() {
 
   app.post('/return', zValidator('json', returnSchema), async (c) => {
     const actor = c.get('sessionUser')
+    const rateLimitFailure = await assertRateLimit(c, 'circulation-return', 80, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
     try {
       return apiOk(
         c,
@@ -142,6 +158,11 @@ export function createCirculationRoutes() {
 
   app.post('/renew', zValidator('json', renewSchema), async (c) => {
     const actor = c.get('sessionUser')
+    const rateLimitFailure = await assertRateLimit(c, 'circulation-renew', 60, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
     try {
       return apiOk(
         c,
@@ -154,6 +175,11 @@ export function createCirculationRoutes() {
 
   app.post('/reservations', zValidator('json', reservationSchema), async (c) => {
     const actor = c.get('sessionUser')
+    const rateLimitFailure = await assertRateLimit(c, 'circulation-reservation', 60, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
     try {
       return apiOk(
         c,
@@ -174,6 +200,11 @@ export function createCirculationRoutes() {
 
   app.patch('/reservations/:reservationId', zValidator('json', reservationStatusSchema), async (c) => {
     const actor = c.get('sessionUser')
+    const rateLimitFailure = await assertRateLimit(c, 'circulation-reservation-update', 60, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
     try {
       return apiOk(c, {
         reservation: await updateReservationStatus(

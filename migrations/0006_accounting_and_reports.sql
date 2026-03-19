@@ -125,6 +125,11 @@ VALUES
   ('acct_rental_income', '4050-RENTAL', 'বই ভাড়া আয়', 'Book rental income', 'income', NULL, NULL, 1),
   ('acct_other_income', '4060-OTHER', 'অন্যান্য আয়', 'Other income', 'income', NULL, NULL, 1);
 
+INSERT OR IGNORE INTO accounts (id, account_code, account_name_bn, account_name_en, account_type, owner_type, owner_id, active)
+VALUES
+  ('acct_membership_income', '4010-MEMBERSHIP', 'সদস্য চাঁদা আয়', 'Membership income', 'income', NULL, NULL, 1),
+  ('acct_fine_income', '4015-FINE', 'জরিমানা আয়', 'Fine income', 'income', NULL, NULL, 1);
+
 INSERT OR IGNORE INTO fee_types (
   id,
   fee_code,

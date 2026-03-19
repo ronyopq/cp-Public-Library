@@ -116,6 +116,11 @@ export function createAuthRoutes() {
         return apiError(c, 401, 'unauthorized', 'অনুগ্রহ করে সাইন ইন করুন।')
       }
 
+      const rateLimitFailure = await assertRateLimit(c, 'change-password', 10, 300)
+      if (rateLimitFailure) {
+        return rateLimitFailure
+      }
+
       const payload = c.req.valid('json')
       const user = await dbFirst<{ passwordHash: string }>(
         c.env.DB,

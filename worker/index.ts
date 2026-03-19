@@ -11,6 +11,7 @@ import {
   markReminderSent,
   scheduleCirculationReminders,
 } from './services/circulation'
+import { runSystemBackupExport } from './services/maintenance'
 import { dispatchReminder } from './services/reminders'
 import { createAppRoutes } from './routes/app'
 import { createAdminRoutes } from './routes/admin'
@@ -160,6 +161,10 @@ async function handleTaskMessage(env: AppBindings, message: TaskMessage) {
 
   if (message.type === 'overdue-reminder') {
     return
+  }
+
+  if (message.type === 'export-snapshot') {
+    await runSystemBackupExport(env, message.exportId, message.tableNames, message.actorId)
   }
 }
 
