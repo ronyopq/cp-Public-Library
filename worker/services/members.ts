@@ -37,6 +37,7 @@ interface MemberRow {
   photoKey: string | null
   notes: string | null
   updatedAt?: string
+  deletedAt?: string | null
 }
 
 interface TemplateRow {
@@ -131,6 +132,7 @@ function mapMember(row: MemberRow): Member {
     memberStatus: row.memberStatus,
     photoKey: row.photoKey,
     notes: row.notes,
+    deletedAt: row.deletedAt,
   }
 }
 
@@ -221,7 +223,11 @@ async function ensureUniqueMemberCode(
   }
 }
 
-async function loadMemberById(db: D1Database, memberId: string): Promise<Member | null> {
+async function loadMemberById(
+  db: D1Database,
+  memberId: string,
+  includeDeleted = false,
+): Promise<Member | null> {
   const row = await dbFirst<MemberRow>(
     db,
     `
@@ -243,10 +249,11 @@ async function loadMemberById(db: D1Database, memberId: string): Promise<Member 
         ${derivedMemberStatusSql()} AS memberStatus,
         photo_r2_key AS photoKey,
         note AS notes,
-        updated_at AS updatedAt
+        updated_at AS updatedAt,
+        deleted_at AS deletedAt
       FROM members
       WHERE id = ?
-        AND deleted_at IS NULL
+        ${includeDeleted ? '' : 'AND deleted_at IS NULL'}
       LIMIT 1
     `,
     [memberId],
@@ -621,6 +628,82 @@ export async function listMembers(
   }
 }
 
+export async function listArchivedMembers(
+  db: D1Database,
+  options: { search: string; page: number; pageSize: number },
+) {
+  const likeSearch = `%${sanitizeString(options.search)}%`
+  const items = await dbAll<MemberRow>(
+    db,
+    `
+      SELECT
+        id,
+        member_no AS memberCode,
+        full_name_bn AS fullNameBn,
+        full_name_en AS fullNameEn,
+        guardian_name AS guardianName,
+        email,
+        phone,
+        national_id AS nationalId,
+        address_line AS addressLine,
+        area,
+        district,
+        date_of_birth AS dateOfBirth,
+        joined_at AS joinedAt,
+        membership_expires_at AS membershipExpiresAt,
+        ${derivedMemberStatusSql()} AS memberStatus,
+        photo_r2_key AS photoKey,
+        note AS notes,
+        updated_at AS updatedAt,
+        deleted_at AS deletedAt
+      FROM members
+      WHERE deleted_at IS NOT NULL
+        AND (
+          ? = '%%'
+          OR member_no LIKE ?
+          OR full_name_bn LIKE ?
+          OR COALESCE(full_name_en, '') LIKE ?
+          OR phone LIKE ?
+        )
+      ORDER BY deleted_at DESC
+      LIMIT ? OFFSET ?
+    `,
+    [
+      likeSearch,
+      likeSearch,
+      likeSearch,
+      likeSearch,
+      likeSearch,
+      options.pageSize,
+      (options.page - 1) * options.pageSize,
+    ],
+  )
+
+  const totalRow = await dbFirst<{ total: number }>(
+    db,
+    `
+      SELECT COUNT(*) AS total
+      FROM members
+      WHERE deleted_at IS NOT NULL
+        AND (
+          ? = '%%'
+          OR member_no LIKE ?
+          OR full_name_bn LIKE ?
+          OR COALESCE(full_name_en, '') LIKE ?
+          OR phone LIKE ?
+        )
+    `,
+    [likeSearch, likeSearch, likeSearch, likeSearch, likeSearch],
+  )
+
+  return {
+    items: items.map(mapMember),
+    page: options.page,
+    pageSize: options.pageSize,
+    total: Number(totalRow?.total ?? 0),
+  }
+}
+
 export async function getMemberProfile(
   db: D1Database,
   memberId: string,
@@ -937,6 +1020,53 @@ export async function archiveMember(
       after: { deletedAt: dhakaNow() },
     },
   )
+}
+
+export async function restoreMember(
+  env: AppBindings,
+  actor: SessionUser,
+  memberId: string,
+  requestId?: string | null,
+) {
+  const before = await loadMemberById(env.DB, memberId, true)
+  if (!before || !before.deletedAt) {
+    throw new Error('আর্কাইভ করা সদস্য প্রোফাইল পাওয়া যায়নি।')
+  }
+
+  await dbRun(
+    env.DB,
+    `
+      UPDATE members
+      SET
+        deleted_at = NULL,
+        updated_by_user_id = ?,
+        updated_at = ?
+      WHERE id = ?
+        AND deleted_at IS NOT NULL
+    `,
+    [actor.id, dhakaNow(), memberId],
+  )
+
+  const after = await loadMemberById(env.DB, memberId)
+  if (!after) {
+    throw new Error('সদস্য প্রোফাইল পুনরুদ্ধার করা যায়নি।')
+  }
+
+  await writeAudit(
+    env.DB,
+    actor,
+    'members.restore',
+    'member',
+    memberId,
+    'আর্কাইভ করা সদস্য প্রোফাইল পুনরুদ্ধার করা হয়েছে।',
+    {
+      before,
+      after,
+      requestId,
+    },
+  )
+
+  return after
 }
 
 export async function listMemberCardTemplates(

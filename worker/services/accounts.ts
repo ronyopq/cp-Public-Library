@@ -576,7 +576,11 @@ async function resolveMember(db: D1Database, memberId: string): Promise<Member |
   return row ? mapMember(row) : null
 }
 
-async function resolveFeeType(db: D1Database, feeTypeId: string): Promise<FeeTypeDefinition | null> {
+async function resolveFeeType(
+  db: D1Database,
+  feeTypeId: string,
+  includeDeleted = false,
+): Promise<FeeTypeDefinition | null> {
   const row = await dbFirst<FeeTypeRow>(
     db,
     `
@@ -604,7 +608,7 @@ async function resolveFeeType(db: D1Database, feeTypeId: string): Promise<FeeTyp
       FROM fee_types
       LEFT JOIN accounts ON accounts.id = fee_types.income_account_id
       WHERE fee_types.id = ?
-        AND fee_types.deleted_at IS NULL
+        ${includeDeleted ? '' : 'AND fee_types.deleted_at IS NULL'}
       LIMIT 1
     `,
     [feeTypeId],
@@ -2081,6 +2085,92 @@ export async function archiveFeeType(
       requestId: requestId ?? null,
     },
   )
+}
+
+export async function listArchivedFeeTypes(db: D1Database): Promise<FeeTypeDefinition[]> {
+  const rows = await dbAll<FeeTypeRow>(
+    db,
+    `
+      SELECT
+        fee_types.id AS id,
+        fee_types.fee_code AS feeCode,
+        fee_types.base_code AS baseCode,
+        fee_types.name_bn AS nameBn,
+        fee_types.name_en AS nameEn,
+        fee_types.description_bn AS descriptionBn,
+        fee_types.description_en AS descriptionEn,
+        fee_types.collection_mode AS collectionMode,
+        fee_types.default_amount AS defaultAmount,
+        fee_types.allow_custom_amount AS allowCustomAmount,
+        fee_types.allow_multi_month AS allowMultiMonth,
+        fee_types.income_account_id AS incomeAccountId,
+        accounts.account_code AS incomeAccountCode,
+        accounts.account_name_bn AS incomeAccountNameBn,
+        fee_types.active AS active,
+        fee_types.is_system AS isSystem,
+        fee_types.sort_order AS sortOrder,
+        fee_types.deleted_at AS deletedAt,
+        fee_types.created_at AS createdAt,
+        fee_types.updated_at AS updatedAt
+      FROM fee_types
+      LEFT JOIN accounts ON accounts.id = fee_types.income_account_id
+      WHERE fee_types.deleted_at IS NOT NULL
+      ORDER BY fee_types.deleted_at DESC, fee_types.name_bn ASC
+    `,
+  )
+
+  return rows.map(mapFeeType)
+}
+
+export async function restoreFeeType(
+  db: D1Database,
+  actor: SessionUser,
+  feeTypeId: string,
+  requestId?: string | null,
+): Promise<FeeTypeDefinition> {
+  const before = await resolveFeeType(db, feeTypeId, true)
+  if (!before || !before.deletedAt) {
+    throw new Error('আর্কাইভ করা ফি টাইপ পাওয়া যায়নি।')
+  }
+  if (before.isSystem) {
+    throw new Error('সিস্টেম ফি টাইপ পুনরুদ্ধারের প্রয়োজন নেই।')
+  }
+
+  await dbRun(
+    db,
+    `
+      UPDATE fee_types
+      SET
+        active = 1,
+        deleted_at = NULL,
+        updated_by_user_id = ?,
+        updated_at = ?
+      WHERE id = ?
+        AND deleted_at IS NOT NULL
+    `,
+    [actor.id, dhakaNow(), feeTypeId],
+  )
+
+  const after = await resolveFeeType(db, feeTypeId)
+  if (!after) {
+    throw new Error('ফি টাইপ পুনরুদ্ধার করা যায়নি।')
+  }
+
+  await writeAudit(
+    db,
+    actor,
+    'accounts.fee_type.restore',
+    'fee_type',
+    feeTypeId,
+    'An archived fee type has been restored.',
+    {
+      before,
+      after,
+      requestId: requestId ?? null,
+    },
+  )
+
+  return after
 }
 
 export async function collectAccountingPayment(

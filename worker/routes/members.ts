@@ -17,6 +17,7 @@ import {
   createMemberCardPrintJob,
   getMemberProfile,
   getSelfMemberProfile,
+  listArchivedMembers,
   listMemberCardTemplates,
   listMembers,
   updateMember,
@@ -73,6 +74,23 @@ export function createMemberRoutes() {
     )
   })
 
+  app.get('/archived', requirePermission('members.manage'), async (c) => {
+    const actor = c.get('sessionUser')
+    if (!requireSensitiveMemberRole(actor)) {
+      return apiError(c, 403, 'insufficient_role', 'আর্কাইভ সদস্য দেখতে Manager বা তার উপরের ভূমিকা প্রয়োজন।')
+    }
+
+    const query = getPaginationQuery(new URL(c.req.url).searchParams)
+    return apiOk(
+      c,
+      await listArchivedMembers(c.env.DB, {
+        search: query.search,
+        page: query.page,
+        pageSize: query.pageSize,
+      }),
+    )
+  })
+
   app.get('/templates/cards', requirePermission('members.manage'), async (c) => {
     const actor = c.get('sessionUser')
     if (!requireMemberPrintAccess(actor)) {
@@ -119,6 +137,16 @@ export function createMemberRoutes() {
       return apiError(c, 403, 'insufficient_role', 'সদস্য প্রোফাইল তৈরি করতে Manager বা তার উপরের ভূমিকা প্রয়োজন।')
     }
 
+    const rateLimitFailure = await assertRateLimit(c, 'member-create', 25, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
+    const rateLimitFailure = await assertRateLimit(c, 'member-update', 50, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
+    }
+
     try {
       return apiOk(
         c,
@@ -141,6 +169,11 @@ export function createMemberRoutes() {
     const actor = c.get('sessionUser')
     if (!requireMemberPrintAccess(actor)) {
       return apiError(c, 403, 'insufficient_permission', 'আইডি কার্ড প্রিন্টের অনুমতি নেই।')
+    }
+
+    const rateLimitFailure = await assertRateLimit(c, 'member-print-jobs', 20, 300)
+    if (rateLimitFailure) {
+      return rateLimitFailure
     }
 
     const origin = new URL(c.req.url).origin

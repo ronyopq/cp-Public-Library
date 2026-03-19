@@ -164,6 +164,11 @@ export interface AuditLogRecord {
   entityType: string
   entityId: string
   note?: string | null
+  requestId?: string | null
+  ipAddress?: string | null
+  userAgent?: string | null
+  before?: Record<string, unknown> | null
+  after?: Record<string, unknown> | null
   createdAt: string
 }
 
@@ -366,6 +371,7 @@ export interface Member {
   memberStatus: MemberStatus
   photoKey?: string | null
   notes?: string | null
+  deletedAt?: string | null
 }
 
 export interface MemberListItem extends Member {
